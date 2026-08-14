@@ -467,3 +467,25 @@ describe("workspace members and settings", () => {
     })).status).toBe(201);
   });
 });
+
+describe("production SPA path handling", () => {
+  it("serves the SPA for malformed invitation URLs and controls other malformed paths", async () => {
+    const { database, dataDirectory } = testApp();
+    const clientDirectory = path.join(dataDirectory, "client");
+    fs.mkdirSync(clientDirectory);
+    fs.writeFileSync(path.join(clientDirectory, "index.html"), "<!doctype html><title>Conf Simple test client</title><div id=\"root\">client shell</div>");
+    const app = createApp(database, { clientDirectory });
+
+    const invite = await request(app).get("/invite/%E0%A4%A");
+    expect(invite.status).toBe(200);
+    expect(invite.text).toContain("client shell");
+
+    const api = await request(app).get("/api/%E0%A4%A");
+    expect(api.status).toBe(400);
+    expect(api.body).toEqual({ error: "Malformed request path" });
+
+    const other = await request(app).get("/other/%E0%A4%A");
+    expect(other.status).toBe(400);
+    expect(other.text).toBe("Malformed request path");
+  });
+});

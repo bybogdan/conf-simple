@@ -395,22 +395,40 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
     return response.json(pageById(database, pageId));
   }));
 
-  app.use((error: unknown, _request: Request, response: Response, _next: express.NextFunction) => {
-    if (error instanceof UploadError) return response.status(error.status).json({ error: error.message });
-    if ((error as { type?: string }).type === "entity.too.large") return response.status(413).json({ error: "Files must be 10 MB or smaller" });
-    if (error instanceof z.ZodError) return response.status(400).json({ error: "Please check the submitted fields", details: error.issues });
-    if (error instanceof SetupCompleteError) return response.status(409).json({ error: "Setup has already been completed" });
-    if (error instanceof InvitationUsedError) return response.status(409).json({ error: "This invitation has already been used" });
-    if (error instanceof PageHierarchyError) return response.status(error.status).json({ error: error.message });
-    console.error(error);
-    return response.status(500).json({ error: "Unexpected server error" });
-  });
+  app.use((error: unknown, request: Request, response: Response, _next: express.NextFunction) =>
+    sendError(error, request, response));
 
   if (options.clientDirectory) {
     app.use(express.static(options.clientDirectory, { index: false }));
     app.get("/{*path}", (_request, response) => response.sendFile(path.join(options.clientDirectory!, "index.html")));
   }
+
+  // Static serving and the SPA wildcard run after the primary API error boundary.
+  // Express can reject malformed percent-encoding while matching those routes,
+  // so keep a terminal boundary to make direct navigation deterministic.
+  app.use((error: unknown, request: Request, response: Response, _next: express.NextFunction) => {
+    if (error instanceof URIError && options.clientDirectory && ["GET", "HEAD"].includes(request.method) && request.originalUrl.startsWith("/invite/")) {
+      return response.sendFile(path.join(options.clientDirectory, "index.html"));
+    }
+    return sendError(error, request, response);
+  });
   return app;
+}
+
+function sendError(error: unknown, request: Request, response: Response) {
+  if (error instanceof URIError) {
+    return request.originalUrl.startsWith("/api/")
+      ? response.status(400).json({ error: "Malformed request path" })
+      : response.status(400).type("text/plain").send("Malformed request path");
+  }
+  if (error instanceof UploadError) return response.status(error.status).json({ error: error.message });
+  if ((error as { type?: string }).type === "entity.too.large") return response.status(413).json({ error: "Files must be 10 MB or smaller" });
+  if (error instanceof z.ZodError) return response.status(400).json({ error: "Please check the submitted fields", details: error.issues });
+  if (error instanceof SetupCompleteError) return response.status(409).json({ error: "Setup has already been completed" });
+  if (error instanceof InvitationUsedError) return response.status(409).json({ error: "This invitation has already been used" });
+  if (error instanceof PageHierarchyError) return response.status(error.status).json({ error: error.message });
+  console.error(error);
+  return response.status(500).json({ error: "Unexpected server error" });
 }
 
 function workspacePayload(database: AppDatabase, user: SessionUser) {
