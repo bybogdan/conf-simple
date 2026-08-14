@@ -1,4 +1,4 @@
-import type { Bootstrap, Page, PageRevision, RichDocument, SearchResult, UploadedFile } from "./types";
+import type { Bootstrap, Invitation, InvitationDetails, Member, Page, PageRevision, RichDocument, SearchResult, UploadedFile, Workspace } from "./types";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -20,6 +20,16 @@ export const api = {
   login: (input: { email: string; password: string }) =>
     request<Required<Omit<Bootstrap, "needsSetup" | "requiresAuth">>>("/api/login", { method: "POST", body: JSON.stringify(input) }),
   logout: () => request<void>("/api/logout", { method: "POST" }),
+  invitation: (token: string) => request<InvitationDetails>(`/api/invitations/${encodeURIComponent(token)}`),
+  acceptInvitation: (input: { token: string; displayName: string; password: string }) =>
+    request<Required<Omit<Bootstrap, "needsSetup" | "requiresAuth">>>("/api/invitations/accept", { method: "POST", body: JSON.stringify(input) }),
+  members: () => request<Member[]>("/api/members"),
+  createInvitation: (input: { email: string; role: "admin" | "member" }) =>
+    request<Invitation>("/api/invitations", { method: "POST", body: JSON.stringify(input) }),
+  updateMemberRole: (id: string, role: "admin" | "member") =>
+    request<{ id: string; role: "admin" | "member" }>(`/api/members/${id}`, { method: "PATCH", body: JSON.stringify({ role }) }),
+  removeMember: (id: string) => request<void>(`/api/members/${id}`, { method: "DELETE" }),
+  updateWorkspace: (name: string) => request<Workspace>("/api/workspace", { method: "PATCH", body: JSON.stringify({ name }) }),
   createPage: (input: { title: string; parentId?: string | null; content?: RichDocument }) =>
     request<Page>("/api/pages", { method: "POST", body: JSON.stringify(input) }),
   updatePage: (id: string, input: { title: string; content: RichDocument; version: number }) =>

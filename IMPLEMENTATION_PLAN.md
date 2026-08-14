@@ -140,7 +140,7 @@ QA result: **PASS** at `a8802da` after fixing sequential media insertion; 21/21 
 
 ## Slice 4 — Team and MVP Finishing
 
-**Status:** `TODO`
+**Status:** `DONE`
 
 Scope:
 
@@ -171,6 +171,8 @@ Do not introduce:
 - cloud management
 
 QA gate required before marking `DONE`.
+
+QA result: **PASS** at `6320226`; 32/32 tests, production build/image, migration, persistence, backup/restore, authorization, browser, logs, and audit gates passed.
 
 ---
 
@@ -315,6 +317,6 @@ Routine implementation choices should be made independently.
 
 The next implementation target is:
 
-> **Slice 3 — Files and Media**
+> **Final MVP Gate**
 
-Do not start Slice 4 until Slice 3 has passed its QA gate.
+Run the complete integrated product gate against validated `main` after Slice 4 merges.

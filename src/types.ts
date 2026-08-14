@@ -2,6 +2,15 @@ export type RichDocument = { type: string; content?: Array<Record<string, unknow
 
 export type User = { id: string; email: string; displayName: string };
 export type Workspace = { id: string; name: string; role: "admin" | "member" };
+export type Member = User & { role: "admin" | "member"; joinedAt: string };
+export type Invitation = { token: string; email: string; role: "admin" | "member"; expiresAt: string };
+export type InvitationDetails = {
+  workspaceName: string;
+  email: string;
+  role: "admin" | "member";
+  accountExists: boolean;
+  displayName?: string;
+};
 export type Page = {
   id: string;
   parentId: string | null;

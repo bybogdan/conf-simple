@@ -21,6 +21,48 @@ docker compose up -d --build
 
 Open [http://localhost:3000](http://localhost:3000). The named Docker volume is mounted at `/data`, containing `database.sqlite` and its SQLite WAL files. Stop and recreate the application container without removing the volume to retain all data.
 
+The first person to open a fresh installation creates the workspace and initial admin account. Admins can then open **Members**, create a seven-day invitation link, and share it directly with a teammate. Conf Simple does not require an email provider. Treat invitation links like temporary passwords and share them through a trusted channel.
+
+## Back up and restore
+
+The complete backup unit is the persistent data directory: the SQLite database and `uploads/` folder must stay together. For a consistent Docker backup, briefly stop writes and copy the volume contents:
+
+```bash
+mkdir -p backup
+docker compose stop app
+docker compose cp app:/data/. ./backup/
+docker compose start app
+```
+
+Keep the backup directory private because it contains account and session data. A successful backup normally includes `database.sqlite` and `uploads/`; SQLite `-wal` and `-shm` files may also be present and should be kept with the database if they exist.
+
+Restoring replaces the target installation completely. The command below erases the current contents inside the container's `/data` volume, including any SQLite WAL/SHM files, before copying the complete backup. Back up the target installation first, confirm that `./backup/database.sqlite` is the backup you intend to restore, and keep the app stopped for the entire replacement:
+
+```bash
+docker compose stop app
+docker compose run --rm --no-deps --user root -v "$PWD/backup:/restore:ro" app sh -eu -c 'test -f /restore/database.sqlite; find /data -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +; cp -a /restore/. /data/; chown -R node:node /data'
+docker compose start app
+docker compose ps
+curl --fail http://127.0.0.1:3000/api/health
+```
+
+After the health check succeeds, sign in with an account from the backup and verify the restored workspace name, an expected page and its content, an expected attachment download, and the expected member list. Review recent startup output with `docker compose logs --tail=50 app`. Never copy only the SQLite file or restore files while the application is running. The restore procedure does not require `docker compose down -v`.
+
+For a non-Docker installation, stop the application process, copy the entire `APP_DATA_DIR`, and restart it. Restore by stopping the process and placing the complete backup back at the same configured path.
+
+## Update
+
+Updates preserve the named data volume. Create a backup first, fetch the new application source or image, and recreate only the application container:
+
+```bash
+docker compose build --pull
+docker compose up -d
+docker compose ps
+curl --fail http://127.0.0.1:3000/api/health
+```
+
+Do not run `docker compose down -v`; `-v` deletes the persistent data volume. Database migrations run automatically when the updated application starts. Review container logs after an update with `docker compose logs app`.
+
 ## Verification
 
 ```bash
