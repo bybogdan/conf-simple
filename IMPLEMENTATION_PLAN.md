@@ -105,7 +105,7 @@ Final verification:
 
 ## Slice 3 — Files and Media
 
-**Status:** `QA`
+**Status:** `DONE`
 
 Scope:
 
@@ -133,6 +133,8 @@ Architecture constraints:
 - uploads must remain inside the configured persistent data directory
 
 QA gate required before marking `DONE`.
+
+QA result: **PASS** at `a8802da` after fixing sequential media insertion; 21/21 tests, production build, and Docker image validation passed.
 
 ---
 
