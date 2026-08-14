@@ -40,4 +40,4 @@ Review a slice manually:
 
 > Run the `review-slice` skill for Slice N.
 
-Project instructions and references are defined in the repository root docs and `.codex/skills/`.
+Project instructions and references are defined in the repository root docs and `.agents/skills/`.
