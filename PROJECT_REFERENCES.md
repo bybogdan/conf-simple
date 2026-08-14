@@ -11,6 +11,27 @@ Read this file together with:
 
 ---
 
+## GitHub
+
+Primary repository:
+
+**Repository URL:** https://github.com/bybogdan/conf-simple
+
+Use GitHub as the source of truth for:
+
+- branches
+- pull requests
+- commit history
+- code review
+- QA attribution
+- release-ready state
+
+For slice-based work:
+- one major slice = one feature branch / PR
+- review and QA should inspect the PR diff
+- fixes should stay on the same PR
+- merge only after QA passes
+
 ## Figma
 
 Primary product design:
