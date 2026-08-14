@@ -26,6 +26,7 @@ import {
 import { api } from "../api";
 import { filterSlashCommands, findSlashMatch, type SlashCommandId, type SlashMatch } from "../editor/slashCommands";
 import { FileAttachment } from "../editor/fileAttachment";
+import { insertUploadedMedia } from "../editor/mediaInsertion";
 import type { Page, RichDocument } from "../types";
 
 type SlashMenuState = SlashMatch & {
@@ -222,14 +223,8 @@ export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved
       try {
         const upload = await api.uploadFile(page.id, file);
         pendingUploadIdsRef.current.add(upload.id);
-        if (upload.isImage) {
-          editor.chain().focus().setImage({ src: upload.url, alt: upload.originalName, title: upload.originalName }).run();
-        } else {
-          editor.chain().focus().insertContent({
-            type: "fileAttachment",
-            attrs: { url: upload.url, name: upload.originalName, size: upload.size },
-          }).run();
-        }
+        editor.commands.focus();
+        insertUploadedMedia(editor, upload);
       } catch (caught) {
         setError(caught instanceof Error ? caught.message : `Could not upload ${file.name}`);
       }
