@@ -1,9 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
-import Image from "@tiptap/extension-image";
-import StarterKit from "@tiptap/starter-kit";
-import TaskItem from "@tiptap/extension-task-item";
-import TaskList from "@tiptap/extension-task-list";
 import {
   Check,
   Code2,
@@ -15,23 +11,29 @@ import {
   List,
   ListChecks,
   ListOrdered,
+  Link2,
   Minus,
   Pencil,
   Paperclip,
   Quote,
+  Table2,
   Type,
   X,
   type LucideIcon,
 } from "lucide-react";
 import { api } from "../api";
+import { createEditorExtensions } from "../editor/extensions";
 import { filterSlashCommands, findSlashMatch, type SlashCommandId, type SlashMatch } from "../editor/slashCommands";
-import { FileAttachment } from "../editor/fileAttachment";
+import { applyInlineCode, insertSafeLink, normalizeSafeLinkHref } from "../editor/links";
 import { insertUploadedMedia } from "../editor/mediaInsertion";
 import type { Page, RichDocument } from "../types";
+import { useModalDialog } from "./useModalDialog";
 
 type SlashMenuState = SlashMatch & {
   position: { left: number; top: number };
 };
+
+type LinkDialogState = { from: number; to: number; text: string };
 
 const commandIcons: Record<SlashCommandId, LucideIcon> = {
   text: Type,
@@ -42,7 +44,10 @@ const commandIcons: Record<SlashCommandId, LucideIcon> = {
   "numbered-list": ListOrdered,
   checklist: ListChecks,
   quote: Quote,
+  "inline-code": Code2,
   "code-block": Code2,
+  link: Link2,
+  table: Table2,
   divider: Minus,
   image: ImagePlus,
   attachment: Paperclip,
@@ -55,6 +60,7 @@ export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState("");
   const [slashMenu, setSlashMenu] = useState<SlashMenuState | null>(null);
+  const [linkDialog, setLinkDialog] = useState<LinkDialogState | null>(null);
   const [selectedCommand, setSelectedCommand] = useState(0);
   const slashMenuRef = useRef<SlashMenuState | null>(null);
   const selectedCommandRef = useRef(0);
@@ -68,19 +74,22 @@ export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved
   const editingRef = useRef(editing);
   editingRef.current = editing;
   const editor = useEditor({
-    extensions: [
-      StarterKit,
-      TaskList,
-      TaskItem.configure({ nested: true }),
-      Image.configure({ allowBase64: false, HTMLAttributes: { class: "document-image" } }),
-      FileAttachment,
-    ],
+    extensions: createEditorExtensions(),
     content: page.content,
     editable: editing,
     immediatelyRender: false,
     editorProps: {
       attributes: { class: "prose-editor", "aria-label": "Page content" },
-      handleKeyDown: (_view, event) => slashKeyHandlerRef.current(event),
+      handleKeyDown: (view, event) => {
+        if (slashKeyHandlerRef.current(event)) return true;
+        if (editingRef.current && event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey)) {
+          event.preventDefault();
+          const { from, to } = view.state.selection;
+          setLinkDialog({ from, to, text: view.state.doc.textBetween(from, to, " ") });
+          return true;
+        }
+        return false;
+      },
       handlePaste: (_view, event) => {
         if (!editingRef.current) return false;
         const files = Array.from(event.clipboardData?.files ?? []).filter((file) => file.type.startsWith("image/"));
@@ -112,6 +121,7 @@ export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved
     setContent(page.content);
     editor?.commands.setContent(page.content);
     pendingUploadIdsRef.current.clear();
+    setLinkDialog(null);
     closeSlashMenu();
   }, [page.id, page.version]);
 
@@ -190,25 +200,35 @@ export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved
     const menu = slashMenuRef.current;
     if (!editor || !menu) return;
 
-    const chain = editor.chain().focus().deleteRange(menu.range).clearNodes();
     closeSlashMenu();
     switch (commandId) {
-      case "text": chain.setParagraph().run(); break;
-      case "heading-1": chain.setHeading({ level: 1 }).run(); break;
-      case "heading-2": chain.setHeading({ level: 2 }).run(); break;
-      case "heading-3": chain.setHeading({ level: 3 }).run(); break;
-      case "bullet-list": chain.toggleBulletList().run(); break;
-      case "numbered-list": chain.toggleOrderedList().run(); break;
-      case "checklist": chain.toggleTaskList().run(); break;
-      case "quote": chain.toggleBlockquote().run(); break;
-      case "code-block": chain.setCodeBlock().run(); break;
-      case "divider": chain.setHorizontalRule().run(); break;
+      case "text": editor.chain().focus().deleteRange(menu.range).clearNodes().setParagraph().run(); break;
+      case "heading-1": editor.chain().focus().deleteRange(menu.range).clearNodes().setHeading({ level: 1 }).run(); break;
+      case "heading-2": editor.chain().focus().deleteRange(menu.range).clearNodes().setHeading({ level: 2 }).run(); break;
+      case "heading-3": editor.chain().focus().deleteRange(menu.range).clearNodes().setHeading({ level: 3 }).run(); break;
+      case "bullet-list": editor.chain().focus().deleteRange(menu.range).clearNodes().toggleBulletList().run(); break;
+      case "numbered-list": editor.chain().focus().deleteRange(menu.range).clearNodes().toggleOrderedList().run(); break;
+      case "checklist": editor.chain().focus().deleteRange(menu.range).clearNodes().toggleTaskList().run(); break;
+      case "quote": editor.chain().focus().deleteRange(menu.range).clearNodes().toggleBlockquote().run(); break;
+      case "inline-code":
+        editor.chain().focus().deleteRange(menu.range).run();
+        applyInlineCode(editor);
+        break;
+      case "code-block": editor.chain().focus().deleteRange(menu.range).clearNodes().setCodeBlock().run(); break;
+      case "link": {
+        editor.chain().focus().deleteRange(menu.range).run();
+        const { from, to } = editor.state.selection;
+        setLinkDialog({ from, to, text: "" });
+        break;
+      }
+      case "table": editor.chain().focus().deleteRange(menu.range).clearNodes().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); break;
+      case "divider": editor.chain().focus().deleteRange(menu.range).clearNodes().setHorizontalRule().run(); break;
       case "image":
-        chain.run();
+        editor.chain().focus().deleteRange(menu.range).clearNodes().run();
         imageInputRef.current?.click();
         break;
       case "attachment":
-        chain.run();
+        editor.chain().focus().deleteRange(menu.range).clearNodes().run();
         attachmentInputRef.current?.click();
         break;
     }
@@ -305,7 +325,7 @@ export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved
       <article className="article-width">
         {editing ? <input className="page-title-input" value={title} onChange={(event) => setTitle(event.target.value)} aria-label="Page title" /> : <h1>{page.title}</h1>}
         <p className="page-meta">Updated {relativeDate(page.updatedAt)} · by {page.updatedBy}</p>
-        {editing && <p className="editor-hint">Press <kbd>/</kbd> for blocks · Paste or drop images and files anywhere in the page</p>}
+        {editing && <p className="editor-hint">Press <kbd>/</kbd> for blocks and formatting · <kbd>Ctrl/⌘ K</kbd> for links · Paste or drop files</p>}
         {editing && <>
           <input ref={imageInputRef} className="visually-hidden" type="file" accept="image/png,image/jpeg,image/gif,image/webp" onChange={(event) => { void uploadFiles(Array.from(event.target.files ?? [])); event.target.value = ""; }} />
           <input ref={attachmentInputRef} className="visually-hidden" type="file" accept=".pdf,.zip,.docx,.xlsx,.pptx,.txt,.md,.csv,.json,image/png,image/jpeg,image/gif,image/webp" onChange={(event) => { void uploadFiles(Array.from(event.target.files ?? [])); event.target.value = ""; }} />
@@ -343,8 +363,57 @@ export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved
         {editing && <p className="editor-status" aria-live="polite">{uploading || "Changes are stored when you choose Done."}</p>}
         {error && <p className="form-error" role="alert">{error}</p>}
       </article>
+      {linkDialog && <LinkDialog
+        initialText={linkDialog.text}
+        onClose={() => { setLinkDialog(null); editor?.commands.focus(); }}
+        onInsert={(text, href) => {
+          if (!editor || !insertSafeLink(editor, text, href, linkDialog)) return false;
+          setLinkDialog(null);
+          return true;
+        }}
+      />}
     </section>
   );
+}
+
+function LinkDialog({ initialText, onClose, onInsert }: { initialText: string; onClose: () => void; onInsert: (text: string, href: string) => boolean }) {
+  const [text, setText] = useState(initialText);
+  const [href, setHref] = useState("");
+  const [error, setError] = useState("");
+  const closeRef = useRef(onClose);
+  const textInputRef = useRef<HTMLInputElement>(null);
+  const hrefInputRef = useRef<HTMLInputElement>(null);
+  closeRef.current = onClose;
+  const stableClose = useCallback(() => closeRef.current(), []);
+  const dialogRef = useModalDialog(stableClose);
+  useEffect(() => {
+    (initialText ? hrefInputRef.current : textInputRef.current)?.focus();
+  }, [initialText]);
+
+  function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!text.trim()) {
+      setError("Enter the text to display.");
+      return;
+    }
+    if (!normalizeSafeLinkHref(href)) {
+      setError("Use http://, https://, mailto:, or a path beginning with /.");
+      return;
+    }
+    if (!onInsert(text, href)) setError("Could not insert this link.");
+  }
+
+  return <div className="overlay link-dialog-overlay" onMouseDown={stableClose}>
+    <section ref={dialogRef} className="small-dialog link-dialog" role="dialog" aria-modal="true" aria-labelledby="insert-link-title" onMouseDown={(event) => event.stopPropagation()}>
+      <form onSubmit={submit}>
+      <header><div><h2 id="insert-link-title"><Link2 size={15} />Insert link</h2><p>Link to the web, email, or another page path.</p></div><button type="button" className="icon-button" onClick={stableClose} aria-label="Close link dialog"><X size={16} /></button></header>
+      <label>Text<input ref={textInputRef} value={text} onChange={(event) => setText(event.target.value)} /></label>
+      <label>URL or path<input ref={hrefInputRef} value={href} onChange={(event) => { setHref(event.target.value); setError(""); }} placeholder="https://example.com or /page" inputMode="url" /></label>
+      {error && <p className="form-error" role="alert">{error}</p>}
+      <footer><button type="button" className="secondary" onClick={stableClose}>Cancel</button><button className="primary">Insert link</button></footer>
+      </form>
+    </section>
+  </div>;
 }
 
 function relativeDate(value: string) {

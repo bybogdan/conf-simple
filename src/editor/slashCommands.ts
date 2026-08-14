@@ -7,7 +7,10 @@ export type SlashCommandId =
   | "numbered-list"
   | "checklist"
   | "quote"
+  | "inline-code"
   | "code-block"
+  | "link"
+  | "table"
   | "divider"
   | "image"
   | "attachment";
@@ -33,7 +36,10 @@ export const slashCommands: SlashCommandDefinition[] = [
   { id: "numbered-list", label: "Numbered list", description: "Ordered list", keywords: ["numbers", "ordered", "list"] },
   { id: "checklist", label: "Checklist", description: "To-do items", keywords: ["todo", "task", "checkbox"] },
   { id: "quote", label: "Quote", description: "Quoted text", keywords: ["blockquote"] },
+  { id: "inline-code", label: "Inline code", description: "Code within a sentence", keywords: ["code", "monospace", "mark"] },
   { id: "code-block", label: "Code block", description: "Preformatted code", keywords: ["code", "pre"] },
+  { id: "link", label: "Link", description: "Link text to a page or URL", keywords: ["url", "hyperlink", "mailto"] },
+  { id: "table", label: "Table", description: "Simple 3 × 3 table", keywords: ["grid", "rows", "columns"] },
   { id: "divider", label: "Divider", description: "Horizontal rule", keywords: ["rule", "separator", "line"] },
   { id: "image", label: "Image", description: "Upload a screenshot or image", keywords: ["photo", "picture", "upload"] },
   { id: "attachment", label: "File", description: "Attach a file for download", keywords: ["attachment", "upload", "document"] },
