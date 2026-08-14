@@ -140,7 +140,7 @@ QA result: **PASS** at `a8802da` after fixing sequential media insertion; 21/21 
 
 ## Slice 4 — Team and MVP Finishing
 
-**Status:** `IN_PROGRESS`
+**Status:** `QA`
 
 Scope:
 
