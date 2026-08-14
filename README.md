@@ -29,3 +29,15 @@ npm run build
 ```
 
 The health check endpoint is `GET /api/health`.
+
+## Development with Codex
+
+Build the MVP:
+
+> Run the `build-mvp` skill and continue autonomously until the Final MVP Gate passes.
+
+Review a slice manually:
+
+> Run the `review-slice` skill for Slice N.
+
+Project instructions and references are defined in the repository root docs and `.codex/skills/`.
