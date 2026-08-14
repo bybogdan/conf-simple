@@ -11,5 +11,4 @@ Conf Simple is one TypeScript/Node.js application. In production, one Express pr
 - **Hierarchy/order:** pages use a same-table `parent_id` plus a sibling-local integer `position`; transactional recursive-CTE checks prevent cycles and subtree deletion is explicit.
 - **Search:** a SQLite FTS5 table indexes current page titles and extracted document text in the same transaction as page writes. No external search service is used.
 - **History:** immutable page snapshots are stored in SQLite. Saves by the same author within ten minutes coalesce into one checkpoint; restores always append a new checkpoint.
-
-The first slice deliberately has no upload directory or storage backend. File storage will be introduced with the first upload feature.
+- **Files:** authenticated page-scoped uploads store metadata in SQLite and generated file names under `${APP_DATA_DIR}/uploads`. A small local storage module owns path resolution, validation, writes, and deletion; no external storage backend is required.

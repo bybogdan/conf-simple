@@ -15,6 +15,7 @@ import {
   savePage,
   searchPages,
 } from "./pageService.js";
+import { contentDispositionFilename, LocalUploadStorage, MAX_UPLOAD_BYTES, UploadError, validateUpload } from "./storage.js";
 
 const setupSchema = z.object({
   workspaceName: z.string().trim().min(2).max(80),
@@ -41,11 +42,11 @@ const restoreRevisionSchema = z.object({ version: z.number().int().positive() })
 
 type SessionUser = NonNullable<ReturnType<typeof getSessionUser>>;
 
-export function createApp(database: AppDatabase, options: { clientDirectory?: string; secureCookies?: boolean } = {}) {
+export function createApp(database: AppDatabase, options: { clientDirectory?: string; secureCookies?: boolean; dataDirectory?: string } = {}) {
   const app = express();
+  const uploadStorage = new LocalUploadStorage(options.dataDirectory ?? path.dirname(database.name));
   app.disable("x-powered-by");
   app.use(helmet({ contentSecurityPolicy: false }));
-  app.use(express.json({ limit: "1mb" }));
 
   app.use("/api", (request, response, next) => {
     if (!["GET", "HEAD", "OPTIONS"].includes(request.method) && !hasSafeOrigin(request)) {
@@ -54,6 +55,34 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
     }
     next();
   });
+
+  app.post(
+    "/api/pages/:pageId/uploads",
+    express.raw({ type: () => true, limit: MAX_UPLOAD_BYTES }),
+    requireUser(database, (request, response, user) => {
+      const workspace = memberWorkspace(database, user.id);
+      if (!workspace) return response.status(403).json({ error: "Workspace membership required" });
+      const pageId = String(request.params.pageId);
+      const page = database.prepare("SELECT id FROM pages WHERE id = ? AND workspace_id = ?").get(pageId, workspace.id);
+      if (!page) return response.status(404).json({ error: "Page not found" });
+
+      const upload = validateUpload(request.body, request.get("content-type"), request.get("x-file-name"));
+      const storageName = uploadStorage.write(upload);
+      const id = randomUUID();
+      try {
+        database.prepare(`
+          INSERT INTO uploads (id, workspace_id, page_id, uploaded_by, original_name, storage_name, mime_type, size_bytes, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(id, workspace.id, pageId, user.id, upload.originalName, storageName, upload.mimeType, upload.bytes.length, new Date().toISOString());
+      } catch (error) {
+        uploadStorage.remove(storageName);
+        throw error;
+      }
+      return response.status(201).json(uploadPayload({ id, pageId, originalName: upload.originalName, mimeType: upload.mimeType, size: upload.bytes.length }));
+    }),
+  );
+
+  app.use(express.json({ limit: "1mb" }));
 
   app.get("/api/health", (_request, response) => response.json({ ok: true }));
 
@@ -132,6 +161,7 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
     const pageId = String(request.params.id);
     const workspace = memberWorkspace(database, user.id);
     if (!workspace) return response.status(403).json({ error: "Workspace membership required" });
+    validateMediaReferences(database, input.content, pageId, workspace.id);
     const saved = savePage(database, {
       pageId,
       workspaceId: workspace.id,
@@ -158,8 +188,52 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
   app.delete("/api/pages/:id", requireUser(database, (request, response, user) => {
     const workspace = memberWorkspace(database, user.id);
     if (!workspace) return response.status(403).json({ error: "Workspace membership required" });
+    const storedFiles = database.prepare(`
+      WITH RECURSIVE subtree(id) AS (
+        SELECT id FROM pages WHERE id = ? AND workspace_id = ?
+        UNION ALL SELECT pages.id FROM pages JOIN subtree ON pages.parent_id = subtree.id
+      ) SELECT storage_name AS storageName FROM uploads WHERE page_id IN (SELECT id FROM subtree)
+    `).all(String(request.params.id), workspace.id) as Array<{ storageName: string }>;
     const deletedIds = deletePageTree(database, String(request.params.id), workspace.id);
+    for (const file of storedFiles) uploadStorage.remove(file.storageName);
     return response.json({ deletedIds });
+  }));
+
+  app.get("/api/uploads/:id", requireUser(database, (request, response, user) => {
+    const workspace = memberWorkspace(database, user.id);
+    if (!workspace) return response.status(403).json({ error: "Workspace membership required" });
+    const upload = database.prepare(`
+      SELECT storage_name AS storageName, original_name AS originalName, mime_type AS mimeType
+      FROM uploads WHERE id = ? AND workspace_id = ?
+    `).get(String(request.params.id), workspace.id) as { storageName: string; originalName: string; mimeType: string } | undefined;
+    if (!upload) return response.status(404).json({ error: "File not found" });
+    response.setHeader("Content-Type", upload.mimeType);
+    response.setHeader("Cache-Control", "private, max-age=3600");
+    response.setHeader("X-Content-Type-Options", "nosniff");
+    if (!upload.mimeType.startsWith("image/")) response.setHeader("Content-Disposition", contentDispositionFilename(upload.originalName));
+    return response.sendFile(uploadStorage.resolve(upload.storageName));
+  }));
+
+  app.delete("/api/uploads/:id", requireUser(database, (request, response, user) => {
+    const workspace = memberWorkspace(database, user.id);
+    if (!workspace) return response.status(403).json({ error: "Workspace membership required" });
+    const upload = database.prepare(`
+      SELECT storage_name AS storageName FROM uploads WHERE id = ? AND workspace_id = ?
+    `).get(String(request.params.id), workspace.id) as { storageName: string } | undefined;
+    if (!upload) return response.status(404).json({ error: "File not found" });
+    const reference = `%/api/uploads/${String(request.params.id)}%`;
+    const isReferenced = database.prepare(`
+      SELECT 1 FROM pages WHERE workspace_id = ? AND content_json LIKE ?
+      UNION ALL
+      SELECT 1 FROM page_revisions
+      JOIN pages ON pages.id = page_revisions.page_id
+      WHERE pages.workspace_id = ? AND page_revisions.content_json LIKE ?
+      LIMIT 1
+    `).get(workspace.id, reference, workspace.id, reference);
+    if (isReferenced) return response.status(409).json({ error: "Remove this file from the page before deleting it" });
+    database.prepare("DELETE FROM uploads WHERE id = ? AND workspace_id = ?").run(String(request.params.id), workspace.id);
+    uploadStorage.remove(upload.storageName);
+    return response.status(204).end();
   }));
 
   app.get("/api/search", requireUser(database, (request, response, user) => {
@@ -189,6 +263,8 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
   }));
 
   app.use((error: unknown, _request: Request, response: Response, _next: express.NextFunction) => {
+    if (error instanceof UploadError) return response.status(error.status).json({ error: error.message });
+    if ((error as { type?: string }).type === "entity.too.large") return response.status(413).json({ error: "Files must be 10 MB or smaller" });
     if (error instanceof z.ZodError) return response.status(400).json({ error: "Please check the submitted fields", details: error.issues });
     if (error instanceof SetupCompleteError) return response.status(409).json({ error: "Setup has already been completed" });
     if (error instanceof PageHierarchyError) return response.status(error.status).json({ error: error.message });
@@ -249,6 +325,37 @@ function requireUser(database: AppDatabase, handler: (request: Request, response
       next(error);
     }
   };
+}
+
+function uploadPayload(upload: { id: string; pageId: string; originalName: string; mimeType: string; size: number }) {
+  return { ...upload, url: `/api/uploads/${upload.id}`, isImage: upload.mimeType.startsWith("image/") };
+}
+
+function validateMediaReferences(database: AppDatabase, content: Record<string, unknown>, pageId: string, workspaceId: string) {
+  const references: Array<{ id: string; image: boolean }> = [];
+  const visit = (value: unknown) => {
+    if (!value || typeof value !== "object") return;
+    const node = value as Record<string, unknown>;
+    if (node.type === "image" || node.type === "fileAttachment") {
+      const attrs = node.attrs && typeof node.attrs === "object" ? node.attrs as Record<string, unknown> : {};
+      const url = node.type === "image" ? attrs.src : attrs.url;
+      const match = typeof url === "string" ? /^\/api\/uploads\/([0-9a-f-]{36})$/.exec(url) : null;
+      if (!match) throw new UploadError("Invalid file reference");
+      references.push({ id: match[1], image: node.type === "image" });
+    }
+    if (Array.isArray(node.content)) node.content.forEach(visit);
+  };
+  visit(content);
+
+  for (const reference of references) {
+    const upload = database.prepare(`
+      SELECT mime_type AS mimeType FROM uploads
+      WHERE id = ? AND page_id = ? AND workspace_id = ?
+    `).get(reference.id, pageId, workspaceId) as { mimeType: string } | undefined;
+    if (!upload || (reference.image && !upload.mimeType.startsWith("image/"))) {
+      throw new UploadError("Invalid file reference");
+    }
+  }
 }
 
 function currentUser(database: AppDatabase, request: Request) {

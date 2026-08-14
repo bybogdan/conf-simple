@@ -1,4 +1,4 @@
-import type { Bootstrap, Page, PageRevision, RichDocument, SearchResult } from "./types";
+import type { Bootstrap, Page, PageRevision, RichDocument, SearchResult, UploadedFile } from "./types";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -32,4 +32,29 @@ export const api = {
   revisions: (id: string) => request<PageRevision[]>(`/api/pages/${id}/revisions`),
   restoreRevision: (pageId: string, revisionId: number, version: number) =>
     request<Page>(`/api/pages/${pageId}/revisions/${revisionId}/restore`, { method: "POST", body: JSON.stringify({ version }) }),
+  uploadFile: async (pageId: string, file: File) => {
+    const mimeType = file.type || mimeTypeFromName(file.name);
+    const response = await fetch(`/api/pages/${pageId}/uploads`, {
+      method: "POST",
+      headers: { "Content-Type": mimeType, "X-File-Name": encodeURIComponent(file.name) },
+      body: file,
+    });
+    if (!response.ok) {
+      const body = (await response.json().catch(() => ({}))) as { error?: string };
+      throw new Error(body.error ?? "Upload failed");
+    }
+    return response.json() as Promise<UploadedFile>;
+  },
+  deleteUpload: (id: string) => request<void>(`/api/uploads/${id}`, { method: "DELETE" }),
 };
+
+function mimeTypeFromName(name: string) {
+  const extension = name.toLowerCase().split(".").pop();
+  return ({
+    png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp",
+    pdf: "application/pdf", zip: "application/zip", docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    txt: "text/plain", md: "text/markdown", csv: "text/csv", json: "application/json",
+  } as Record<string, string>)[extension ?? ""] ?? "application/octet-stream";
+}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
+import Image from "@tiptap/extension-image";
 import StarterKit from "@tiptap/starter-kit";
 import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
@@ -10,11 +11,13 @@ import {
   Heading2,
   Heading3,
   History,
+  ImagePlus,
   List,
   ListChecks,
   ListOrdered,
   Minus,
   Pencil,
+  Paperclip,
   Quote,
   Type,
   X,
@@ -22,6 +25,8 @@ import {
 } from "lucide-react";
 import { api } from "../api";
 import { filterSlashCommands, findSlashMatch, type SlashCommandId, type SlashMatch } from "../editor/slashCommands";
+import { FileAttachment } from "../editor/fileAttachment";
+import { insertUploadedMedia } from "../editor/mediaInsertion";
 import type { Page, RichDocument } from "../types";
 
 type SlashMenuState = SlashMatch & {
@@ -39,6 +44,8 @@ const commandIcons: Record<SlashCommandId, LucideIcon> = {
   quote: Quote,
   "code-block": Code2,
   divider: Minus,
+  image: ImagePlus,
+  attachment: Paperclip,
 };
 
 export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved }: { page: Page; editing: boolean; onEdit: () => void; onHistory: () => void; onCancel: () => void; onSaved: (page: Page) => void }) {
@@ -46,6 +53,7 @@ export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved
   const [content, setContent] = useState<RichDocument>(page.content);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState("");
   const [slashMenu, setSlashMenu] = useState<SlashMenuState | null>(null);
   const [selectedCommand, setSelectedCommand] = useState(0);
   const slashMenuRef = useRef<SlashMenuState | null>(null);
@@ -53,14 +61,43 @@ export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved
   const filteredCommandsRef = useRef(filterSlashCommands(""));
   const slashKeyHandlerRef = useRef<(event: KeyboardEvent) => boolean>(() => false);
   const menuElementRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const attachmentInputRef = useRef<HTMLInputElement>(null);
+  const pendingUploadIdsRef = useRef(new Set<string>());
+  const uploadFilesRef = useRef<(files: File[], position?: number) => void>(() => undefined);
+  const editingRef = useRef(editing);
+  editingRef.current = editing;
   const editor = useEditor({
-    extensions: [StarterKit, TaskList, TaskItem.configure({ nested: true })],
+    extensions: [
+      StarterKit,
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      Image.configure({ allowBase64: false, HTMLAttributes: { class: "document-image" } }),
+      FileAttachment,
+    ],
     content: page.content,
     editable: editing,
     immediatelyRender: false,
     editorProps: {
       attributes: { class: "prose-editor", "aria-label": "Page content" },
       handleKeyDown: (_view, event) => slashKeyHandlerRef.current(event),
+      handlePaste: (_view, event) => {
+        if (!editingRef.current) return false;
+        const files = Array.from(event.clipboardData?.files ?? []).filter((file) => file.type.startsWith("image/"));
+        if (!files.length) return false;
+        event.preventDefault();
+        uploadFilesRef.current(files);
+        return true;
+      },
+      handleDrop: (view, event) => {
+        if (!editingRef.current) return false;
+        const files = Array.from(event.dataTransfer?.files ?? []);
+        if (!files.length) return false;
+        event.preventDefault();
+        const position = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos;
+        uploadFilesRef.current(files, position);
+        return true;
+      },
     },
     onUpdate: ({ editor: current }) => setContent(current.getJSON() as RichDocument),
   });
@@ -74,8 +111,15 @@ export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved
     setTitle(page.title);
     setContent(page.content);
     editor?.commands.setContent(page.content);
+    pendingUploadIdsRef.current.clear();
     closeSlashMenu();
   }, [page.id, page.version]);
+
+  useEffect(() => () => {
+    const pendingIds = [...pendingUploadIdsRef.current];
+    pendingUploadIdsRef.current.clear();
+    for (const id of pendingIds) void api.deleteUpload(id);
+  }, [page.id]);
 
   useEffect(() => {
     editor?.setEditable(editing);
@@ -159,7 +203,42 @@ export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved
       case "quote": chain.toggleBlockquote().run(); break;
       case "code-block": chain.setCodeBlock().run(); break;
       case "divider": chain.setHorizontalRule().run(); break;
+      case "image":
+        chain.run();
+        imageInputRef.current?.click();
+        break;
+      case "attachment":
+        chain.run();
+        attachmentInputRef.current?.click();
+        break;
     }
+  }
+
+  async function uploadFiles(files: File[], position?: number) {
+    if (!editor || !editingRef.current || !files.length) return;
+    setError("");
+    if (typeof position === "number") editor.chain().focus().setTextSelection(position).run();
+    for (const file of files) {
+      setUploading(`Uploading ${file.name}…`);
+      try {
+        const upload = await api.uploadFile(page.id, file);
+        pendingUploadIdsRef.current.add(upload.id);
+        editor.commands.focus();
+        insertUploadedMedia(editor, upload);
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : `Could not upload ${file.name}`);
+      }
+    }
+    setUploading("");
+  }
+
+  uploadFilesRef.current = (files, position) => { void uploadFiles(files, position); };
+
+  async function cleanupPendingUploads(keepReferenced: boolean) {
+    const serializedContent = JSON.stringify(editor?.getJSON() ?? content);
+    const removable = [...pendingUploadIdsRef.current].filter((id) => !keepReferenced || !serializedContent.includes(`/api/uploads/${id}`));
+    await Promise.allSettled(removable.map((id) => api.deleteUpload(id)));
+    removable.forEach((id) => pendingUploadIdsRef.current.delete(id));
   }
 
   slashKeyHandlerRef.current = (event) => {
@@ -193,7 +272,10 @@ export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved
     setSaving(true);
     setError("");
     try {
-      const updated = await api.updatePage(page.id, { title: title.trim(), content, version: page.version });
+      await cleanupPendingUploads(true);
+      const currentContent = (editor?.getJSON() as RichDocument | undefined) ?? content;
+      const updated = await api.updatePage(page.id, { title: title.trim(), content: currentContent, version: page.version });
+      pendingUploadIdsRef.current.clear();
       onSaved(updated);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not save page");
@@ -201,7 +283,8 @@ export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved
     }
   }
 
-  function discard() {
+  async function discard() {
+    await cleanupPendingUploads(false);
     setTitle(page.title);
     setContent(page.content);
     editor?.commands.setContent(page.content);
@@ -213,14 +296,20 @@ export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved
     <section className={`page-surface document-page ${editing ? "editing" : "reading"}`}>
       <div className="page-actions">
         {editing ? <>
-          <button className="secondary" onClick={discard}><X size={13} />Discard</button>
-          <button className="primary" disabled={saving || !title.trim()} onClick={save}><Check size={13} />{saving ? "Saving…" : "Done"}</button>
+          <button className="secondary" disabled={saving || Boolean(uploading)} onClick={() => void discard()}><X size={13} />Discard</button>
+          <button className="secondary media-action" disabled={saving || Boolean(uploading)} onClick={() => imageInputRef.current?.click()}><ImagePlus size={13} />Image</button>
+          <button className="secondary media-action" disabled={saving || Boolean(uploading)} onClick={() => attachmentInputRef.current?.click()}><Paperclip size={13} />File</button>
+          <button className="primary" disabled={saving || Boolean(uploading) || !title.trim()} onClick={save}><Check size={13} />{saving ? "Saving…" : "Done"}</button>
         </> : <><button className="secondary" onClick={onHistory}><History size={13} />History</button><button className="secondary" onClick={onEdit}><Pencil size={13} />Edit</button></>}
       </div>
       <article className="article-width">
         {editing ? <input className="page-title-input" value={title} onChange={(event) => setTitle(event.target.value)} aria-label="Page title" /> : <h1>{page.title}</h1>}
         <p className="page-meta">Updated {relativeDate(page.updatedAt)} · by {page.updatedBy}</p>
-        {editing && <p className="editor-hint">Press <kbd>/</kbd> at the start of a line for blocks · Press <kbd>Enter</kbd> for a new paragraph</p>}
+        {editing && <p className="editor-hint">Press <kbd>/</kbd> for blocks · Paste or drop images and files anywhere in the page</p>}
+        {editing && <>
+          <input ref={imageInputRef} className="visually-hidden" type="file" accept="image/png,image/jpeg,image/gif,image/webp" onChange={(event) => { void uploadFiles(Array.from(event.target.files ?? [])); event.target.value = ""; }} />
+          <input ref={attachmentInputRef} className="visually-hidden" type="file" accept=".pdf,.zip,.docx,.xlsx,.pptx,.txt,.md,.csv,.json,image/png,image/jpeg,image/gif,image/webp" onChange={(event) => { void uploadFiles(Array.from(event.target.files ?? [])); event.target.value = ""; }} />
+        </>}
         <EditorContent editor={editor} />
         {slashMenu && (
           <div
@@ -251,7 +340,7 @@ export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved
             </div>
           </div>
         )}
-        {editing && <p className="editor-status">Changes are stored when you choose Done.</p>}
+        {editing && <p className="editor-status" aria-live="polite">{uploading || "Changes are stored when you choose Done."}</p>}
         {error && <p className="form-error" role="alert">{error}</p>}
       </article>
     </section>

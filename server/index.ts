@@ -11,6 +11,7 @@ const database = openDatabase(dataDirectory);
 const app = createApp(database, {
   clientDirectory: isProduction ? path.join(projectRoot, "dist/client") : undefined,
   secureCookies: process.env.SECURE_COOKIES === "true",
+  dataDirectory,
 });
 
 const vite = isProduction

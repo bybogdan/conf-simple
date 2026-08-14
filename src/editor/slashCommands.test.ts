@@ -19,5 +19,7 @@ describe("slash command matching", () => {
     expect(filterSlashCommands("head").map((command) => command.label)).toEqual(["Heading 1", "Heading 2", "Heading 3"]);
     expect(filterSlashCommands("todo").map((command) => command.label)).toEqual(["Checklist"]);
     expect(filterSlashCommands("ordered").map((command) => command.label)).toEqual(["Numbered list"]);
+    expect(filterSlashCommands("photo").map((command) => command.label)).toEqual(["Image"]);
+    expect(filterSlashCommands("attachment").map((command) => command.label)).toEqual(["File"]);
   });
 });

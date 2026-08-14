@@ -24,6 +24,16 @@ export type Bootstrap = {
 
 export type SearchResult = { id: string; title: string; snippet: string };
 
+export type UploadedFile = {
+  id: string;
+  pageId: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  isImage: boolean;
+};
+
 export type PageRevision = {
   id: number;
   title: string;

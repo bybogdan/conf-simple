@@ -5,6 +5,7 @@ import request from "supertest";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
 import { openDatabase, type AppDatabase } from "./database.js";
+import { LocalUploadStorage, MAX_UPLOAD_BYTES, validateUpload } from "./storage.js";
 
 const cleanup: Array<{ directory: string; database: AppDatabase }> = [];
 
@@ -215,5 +216,146 @@ describe("page revision history", () => {
     expect(bootstrap.body.pages.filter((page: { parentId: string | null }) => page.parentId === null).map((page: { title: string }) => page.title)).toEqual(["Release process", "Platform"]);
     expect((await login.get("/api/search?q=canary")).body[0].id).toBe(child.id);
     expect((await login.get(`/api/pages/${child.id}/revisions`)).body).toHaveLength(2);
+  });
+});
+
+describe("local files and media", () => {
+  const png = Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    Buffer.from("test image payload"),
+  ]);
+
+  it("stores validated image bytes and metadata, then serves them only to authenticated members", async () => {
+    const { app, dataDirectory, database } = testApp();
+    const agent = await setupAgent(app);
+    const page = (await agent.post("/api/pages").send({ title: "Screenshots" })).body;
+
+    const uploaded = await agent.post(`/api/pages/${page.id}/uploads`)
+      .set("Content-Type", "image/png")
+      .set("X-File-Name", encodeURIComponent("release screenshot.png"))
+      .send(png);
+
+    expect(uploaded.status).toBe(201);
+    expect(uploaded.body).toMatchObject({
+      pageId: page.id,
+      originalName: "release screenshot.png",
+      mimeType: "image/png",
+      size: png.length,
+      isImage: true,
+    });
+    expect(uploaded.body.url).toBe(`/api/uploads/${uploaded.body.id}`);
+
+    const metadata = database.prepare("SELECT storage_name AS storageName FROM uploads WHERE id = ?").get(uploaded.body.id) as { storageName: string };
+    expect(metadata.storageName).toMatch(/^[0-9a-f-]{36}\.png$/);
+    expect(fs.readFileSync(path.join(dataDirectory, "uploads", metadata.storageName))).toEqual(png);
+    expect((await request(app).get(uploaded.body.url)).status).toBe(401);
+    const download = await agent.get(uploaded.body.url);
+    expect(download.status).toBe(200);
+    expect(download.headers["content-type"]).toMatch(/^image\/png/);
+    expect(download.headers["x-content-type-options"]).toBe("nosniff");
+    expect(download.body).toEqual(png);
+  });
+
+  it("persists attachments across restart and cleans their bytes up with the page", async () => {
+    const first = testApp();
+    const agent = await setupAgent(first.app);
+    const page = (await agent.post("/api/pages").send({ title: "Runbook" })).body;
+    const pdf = Buffer.from("%PDF-1.7\nconf simple test");
+    const uploaded = await agent.post(`/api/pages/${page.id}/uploads`)
+      .set("Content-Type", "application/pdf")
+      .set("X-File-Name", encodeURIComponent("runbook.pdf"))
+      .send(pdf);
+    expect(uploaded.status).toBe(201);
+    const stored = first.database.prepare("SELECT storage_name AS storageName FROM uploads WHERE id = ?").get(uploaded.body.id) as { storageName: string };
+    const storedPath = path.join(first.dataDirectory, "uploads", stored.storageName);
+    expect(fs.existsSync(storedPath)).toBe(true);
+
+    first.database.close();
+    cleanup.splice(cleanup.findIndex((item) => item.database === first.database), 1);
+    const reopened = openDatabase(first.dataDirectory);
+    cleanup.push({ directory: first.dataDirectory, database: reopened });
+    const restarted = request.agent(createApp(reopened, { dataDirectory: first.dataDirectory }));
+    await restarted.post("/api/login").send({ email: "jane@example.com", password: "a very safe password" });
+    const download = await restarted.get(uploaded.body.url);
+    expect(download.status).toBe(200);
+    expect(download.headers["content-disposition"]).toContain("runbook.pdf");
+    expect(download.body).toEqual(pdf);
+
+    expect((await restarted.delete(`/api/pages/${page.id}`)).status).toBe(200);
+    expect(fs.existsSync(storedPath)).toBe(false);
+    expect((reopened.prepare("SELECT COUNT(*) AS count FROM uploads").get() as { count: number }).count).toBe(0);
+  });
+
+  it("rejects spoofed types, unsupported content, oversized files, and unsafe storage paths", async () => {
+    const { app, dataDirectory } = testApp();
+    const agent = await setupAgent(app);
+    const page = (await agent.post("/api/pages").send({ title: "Files" })).body;
+    const spoofed = await agent.post(`/api/pages/${page.id}/uploads`)
+      .set("Content-Type", "image/png")
+      .set("X-File-Name", "payload.png")
+      .send(Buffer.from("<script>alert(1)</script>"));
+    expect(spoofed.status).toBe(400);
+    expect(spoofed.body.error).toMatch(/contents/);
+
+    expect(() => validateUpload(Buffer.alloc(MAX_UPLOAD_BYTES + 1), "text/plain", "large.txt")).toThrow(/10 MB/);
+    expect(() => new LocalUploadStorage(dataDirectory).resolve("../../database.sqlite")).toThrow(/Invalid stored file/);
+  });
+
+  it("removes a newly uploaded file through the explicit cleanup endpoint", async () => {
+    const { app, dataDirectory, database } = testApp();
+    const agent = await setupAgent(app);
+    const page = (await agent.post("/api/pages").send({ title: "Draft" })).body;
+    const uploaded = await agent.post(`/api/pages/${page.id}/uploads`)
+      .set("Content-Type", "text/plain")
+      .set("X-File-Name", "draft.txt")
+      .send(Buffer.from("draft attachment"));
+    const row = database.prepare("SELECT storage_name AS storageName FROM uploads WHERE id = ?").get(uploaded.body.id) as { storageName: string };
+    expect((await agent.delete(uploaded.body.url)).status).toBe(204);
+    expect(fs.existsSync(path.join(dataDirectory, "uploads", row.storageName))).toBe(false);
+    expect((await agent.get(uploaded.body.url)).status).toBe(404);
+  });
+
+  it("does not let draft cleanup delete a file referenced by page content", async () => {
+    const { app } = testApp();
+    const agent = await setupAgent(app);
+    const page = (await agent.post("/api/pages").send({ title: "Published" })).body;
+    const uploaded = await agent.post(`/api/pages/${page.id}/uploads`)
+      .set("Content-Type", "text/plain")
+      .set("X-File-Name", "published.txt")
+      .send(Buffer.from("published attachment"));
+    await agent.put(`/api/pages/${page.id}`).send({
+      title: "Published",
+      version: 1,
+      content: { type: "doc", content: [{ type: "fileAttachment", attrs: { url: uploaded.body.url, name: "published.txt", size: 20 } }] },
+    });
+
+    const deletion = await agent.delete(uploaded.body.url);
+    expect(deletion.status).toBe(409);
+    expect((await agent.get(uploaded.body.url)).status).toBe(200);
+  });
+
+  it("rejects unsafe, missing, and cross-page media references", async () => {
+    const { app } = testApp();
+    const agent = await setupAgent(app);
+    const firstPage = (await agent.post("/api/pages").send({ title: "First" })).body;
+    const secondPage = (await agent.post("/api/pages").send({ title: "Second" })).body;
+    const uploaded = await agent.post(`/api/pages/${firstPage.id}/uploads`)
+      .set("Content-Type", "image/png")
+      .set("X-File-Name", "safe.png")
+      .send(png);
+
+    const unsafe = await agent.put(`/api/pages/${firstPage.id}`).send({
+      title: "First",
+      version: 1,
+      content: { type: "doc", content: [{ type: "fileAttachment", attrs: { url: "javascript:alert(1)", name: "unsafe", size: 1 } }] },
+    });
+    expect(unsafe.status).toBe(400);
+
+    const crossPage = await agent.put(`/api/pages/${secondPage.id}`).send({
+      title: "Second",
+      version: 1,
+      content: { type: "doc", content: [{ type: "image", attrs: { src: uploaded.body.url, alt: "wrong page" } }] },
+    });
+    expect(crossPage.status).toBe(400);
   });
 });
