@@ -8,7 +8,9 @@ export type SlashCommandId =
   | "checklist"
   | "quote"
   | "code-block"
-  | "divider";
+  | "divider"
+  | "image"
+  | "attachment";
 
 export type SlashCommandDefinition = {
   id: SlashCommandId;
@@ -33,6 +35,8 @@ export const slashCommands: SlashCommandDefinition[] = [
   { id: "quote", label: "Quote", description: "Quoted text", keywords: ["blockquote"] },
   { id: "code-block", label: "Code block", description: "Preformatted code", keywords: ["code", "pre"] },
   { id: "divider", label: "Divider", description: "Horizontal rule", keywords: ["rule", "separator", "line"] },
+  { id: "image", label: "Image", description: "Upload a screenshot or image", keywords: ["photo", "picture", "upload"] },
+  { id: "attachment", label: "File", description: "Attach a file for download", keywords: ["attachment", "upload", "document"] },
 ];
 
 export function findSlashMatch(textBeforeCursor: string, textBlockStart: number, cursorPosition: number): SlashMatch | null {
