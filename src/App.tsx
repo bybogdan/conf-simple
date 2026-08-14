@@ -53,9 +53,16 @@ export function App() {
   );
 }
 
-function invitationToken(pathname: string) {
+export function invitationToken(pathname: string) {
   const match = /^\/invite\/([^/]+)\/?$/.exec(pathname);
-  return match ? decodeURIComponent(match[1]) : null;
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    // Keep malformed paths in the invitation flow so the API can reject them
+    // through the normal "Invitation unavailable" state instead of crashing render.
+    return match[1];
+  }
 }
 
 function FatalError({ message }: { message: string }) {
