@@ -333,4 +333,29 @@ describe("local files and media", () => {
     expect(deletion.status).toBe(409);
     expect((await agent.get(uploaded.body.url)).status).toBe(200);
   });
+
+  it("rejects unsafe, missing, and cross-page media references", async () => {
+    const { app } = testApp();
+    const agent = await setupAgent(app);
+    const firstPage = (await agent.post("/api/pages").send({ title: "First" })).body;
+    const secondPage = (await agent.post("/api/pages").send({ title: "Second" })).body;
+    const uploaded = await agent.post(`/api/pages/${firstPage.id}/uploads`)
+      .set("Content-Type", "image/png")
+      .set("X-File-Name", "safe.png")
+      .send(png);
+
+    const unsafe = await agent.put(`/api/pages/${firstPage.id}`).send({
+      title: "First",
+      version: 1,
+      content: { type: "doc", content: [{ type: "fileAttachment", attrs: { url: "javascript:alert(1)", name: "unsafe", size: 1 } }] },
+    });
+    expect(unsafe.status).toBe(400);
+
+    const crossPage = await agent.put(`/api/pages/${secondPage.id}`).send({
+      title: "Second",
+      version: 1,
+      content: { type: "doc", content: [{ type: "image", attrs: { src: uploaded.body.url, alt: "wrong page" } }] },
+    });
+    expect(crossPage.status).toBe(400);
+  });
 });

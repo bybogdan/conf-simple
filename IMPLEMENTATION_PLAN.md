@@ -105,7 +105,7 @@ Final verification:
 
 ## Slice 3 — Files and Media
 
-**Status:** `IN_PROGRESS`
+**Status:** `QA`
 
 Scope:
 

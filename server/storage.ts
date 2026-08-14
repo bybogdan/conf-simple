@@ -98,7 +98,14 @@ function matchesContent(mimeType: string, bytes: Buffer) {
   if (mimeType === "image/webp") return bytes.subarray(0, 4).toString("ascii") === "RIFF" && bytes.subarray(8, 12).toString("ascii") === "WEBP";
   if (mimeType === "application/pdf") return bytes.subarray(0, 5).toString("ascii") === "%PDF-";
   if (mimeType === "application/zip" || mimeType.includes("openxmlformats")) {
-    return bytes[0] === 0x50 && bytes[1] === 0x4b && [[0x03, 0x04], [0x05, 0x06], [0x07, 0x08]].some(([a, b]) => bytes[2] === a && bytes[3] === b);
+    const isZip = bytes[0] === 0x50 && bytes[1] === 0x4b && [[0x03, 0x04], [0x05, 0x06], [0x07, 0x08]].some(([a, b]) => bytes[2] === a && bytes[3] === b);
+    if (!isZip || mimeType === "application/zip") return isZip;
+    const archiveIndex = bytes.toString("latin1");
+    if (!archiveIndex.includes("[Content_Types].xml")) return false;
+    if (mimeType.includes("wordprocessingml")) return archiveIndex.includes("word/");
+    if (mimeType.includes("spreadsheetml")) return archiveIndex.includes("xl/");
+    if (mimeType.includes("presentationml")) return archiveIndex.includes("ppt/");
+    return false;
   }
   if (mimeType.startsWith("text/") || mimeType === "application/json") {
     if (bytes.includes(0)) return false;

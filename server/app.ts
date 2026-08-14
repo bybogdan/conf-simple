@@ -161,6 +161,7 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
     const pageId = String(request.params.id);
     const workspace = memberWorkspace(database, user.id);
     if (!workspace) return response.status(403).json({ error: "Workspace membership required" });
+    validateMediaReferences(database, input.content, pageId, workspace.id);
     const saved = savePage(database, {
       pageId,
       workspaceId: workspace.id,
@@ -328,6 +329,33 @@ function requireUser(database: AppDatabase, handler: (request: Request, response
 
 function uploadPayload(upload: { id: string; pageId: string; originalName: string; mimeType: string; size: number }) {
   return { ...upload, url: `/api/uploads/${upload.id}`, isImage: upload.mimeType.startsWith("image/") };
+}
+
+function validateMediaReferences(database: AppDatabase, content: Record<string, unknown>, pageId: string, workspaceId: string) {
+  const references: Array<{ id: string; image: boolean }> = [];
+  const visit = (value: unknown) => {
+    if (!value || typeof value !== "object") return;
+    const node = value as Record<string, unknown>;
+    if (node.type === "image" || node.type === "fileAttachment") {
+      const attrs = node.attrs && typeof node.attrs === "object" ? node.attrs as Record<string, unknown> : {};
+      const url = node.type === "image" ? attrs.src : attrs.url;
+      const match = typeof url === "string" ? /^\/api\/uploads\/([0-9a-f-]{36})$/.exec(url) : null;
+      if (!match) throw new UploadError("Invalid file reference");
+      references.push({ id: match[1], image: node.type === "image" });
+    }
+    if (Array.isArray(node.content)) node.content.forEach(visit);
+  };
+  visit(content);
+
+  for (const reference of references) {
+    const upload = database.prepare(`
+      SELECT mime_type AS mimeType FROM uploads
+      WHERE id = ? AND page_id = ? AND workspace_id = ?
+    `).get(reference.id, pageId, workspaceId) as { mimeType: string } | undefined;
+    if (!upload || (reference.image && !upload.mimeType.startsWith("image/"))) {
+      throw new UploadError("Invalid file reference");
+    }
+  }
 }
 
 function currentUser(database: AppDatabase, request: Request) {
