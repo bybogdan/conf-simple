@@ -1,3 +1,8 @@
+---
+name: build-mvp
+description: Autonomously continue development of this repository through all planned MVP slices, independent QA gates, pull requests, merges, and final integrated validation. Use when the user asks Codex to build, finish, continue, or deliver the complete MVP with minimal involvement.
+---
+
 # build-mvp
 
 Autonomously continue development of this repository until the MVP passes the final gate.
@@ -241,10 +246,10 @@ Push the state to the same branch/PR.
 
 ### Step 8 — Independent QA
 
-Invoke:
+Invoke the repository skill:
 
 ```text
-.codex/skills/review-slice/SKILL.md
+$review-slice
 ```
 
 Provide:

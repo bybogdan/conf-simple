@@ -1,3 +1,8 @@
+---
+name: review-slice
+description: Independently review a single MVP implementation slice as a senior QA and release-readiness agent, including Git and PR state, runtime behavior, regressions, persistence, security, architecture, Figma consistency, and automated checks. Use when the user or build-mvp orchestrator requests QA, release review, or re-testing for a slice before merge.
+---
+
 # review-slice
 
 Independently review one implementation slice as a **Senior QA / release-readiness agent**.
