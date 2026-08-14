@@ -1,0 +1,45 @@
+# Routine repository operations that may run outside the sandbox without asking.
+# Keep destructive variants forbidden even when a broader workflow is allowed.
+
+# Read-only Git inspection.
+prefix_rule(pattern = ["git", ["status", "diff", "log", "show", "branch", "remote", "rev-parse", "merge-base", "ls-files", "tag"]], decision = "allow", justification = "Routine repository inspection")
+
+# Normal branch and delivery workflow.
+prefix_rule(pattern = ["git", "fetch"], decision = "allow", justification = "Update remote repository metadata")
+prefix_rule(pattern = ["git", "pull"], decision = "allow", justification = "Update the current project branch")
+prefix_rule(pattern = ["git", "switch"], decision = "allow", justification = "Switch or create project branches")
+prefix_rule(pattern = ["git", "add"], decision = "allow", justification = "Stage files belonging to the current task")
+prefix_rule(pattern = ["git", "commit"], decision = "allow", justification = "Create project commits")
+prefix_rule(pattern = ["git", "merge"], decision = "allow", justification = "Integrate validated project branches")
+prefix_rule(pattern = ["git", "rebase"], decision = "allow", justification = "Update an unpublished feature branch from its validated base")
+prefix_rule(pattern = ["git", "cherry-pick"], decision = "allow", justification = "Apply an identified project commit")
+prefix_rule(pattern = ["git", "push", "origin"], decision = "allow", justification = "Push the current project branch to origin")
+prefix_rule(pattern = ["git", "push", "-u", "origin"], decision = "allow", justification = "Publish a new project branch to origin")
+prefix_rule(pattern = ["git", "push", "--set-upstream", "origin"], decision = "allow", justification = "Publish a new project branch to origin")
+
+# Git operations that can discard work or rewrite published history remain blocked.
+prefix_rule(pattern = ["git", "reset"], decision = "forbidden", justification = "Use non-destructive inspection or request explicit user approval before discarding repository state")
+prefix_rule(pattern = ["git", "clean"], decision = "forbidden", justification = "Do not delete untracked user files")
+prefix_rule(pattern = ["git", "push", "--force"], decision = "forbidden", justification = "Do not rewrite published history without explicit user approval")
+prefix_rule(pattern = ["git", "push", "-f"], decision = "forbidden", justification = "Do not rewrite published history without explicit user approval")
+prefix_rule(pattern = ["git", "push", "--force-with-lease"], decision = "forbidden", justification = "Do not rewrite published history without explicit user approval")
+
+# GitHub pull-request lifecycle for this repository.
+prefix_rule(pattern = ["gh", "pr", ["list", "view", "status", "checks", "diff", "create", "edit", "review", "merge"]], decision = "allow", justification = "Manage project pull requests and checks")
+prefix_rule(pattern = ["gh", "repo", "view"], decision = "allow", justification = "Inspect repository metadata")
+
+# Project tests, builds, dependency checks, and local development.
+prefix_rule(pattern = ["npm", ["test", "install", "ci", "audit"]], decision = "allow", justification = "Run project verification and dependency workflows")
+prefix_rule(pattern = ["npm", "run"], decision = "allow", justification = "Run package scripts defined by this repository")
+prefix_rule(pattern = ["npx", ["vitest", "tsc", "vite", "tsx"]], decision = "allow", justification = "Run project-local development tools")
+
+# Docker workflows scoped to the local development environment.
+prefix_rule(pattern = ["docker", ["ps", "images", "inspect", "logs", "build"]], decision = "allow", justification = "Inspect or build local development containers")
+prefix_rule(pattern = ["docker", "compose", ["config", "build", "up", "ps", "logs", "exec", "run", "start", "stop", "restart", "down"]], decision = "allow", justification = "Run this repository's Docker Compose development stack")
+
+# Preserve Docker data unless destructive cleanup is explicitly authorized.
+prefix_rule(pattern = ["docker", "compose", "down", "-v"], decision = "forbidden", justification = "Do not delete persistent project volumes without explicit user approval")
+prefix_rule(pattern = ["docker", "compose", "down", "--volumes"], decision = "forbidden", justification = "Do not delete persistent project volumes without explicit user approval")
+prefix_rule(pattern = ["docker", "volume", "rm"], decision = "forbidden", justification = "Do not delete Docker volumes without explicit user approval")
+prefix_rule(pattern = ["docker", "system", "prune"], decision = "forbidden", justification = "Do not prune machine-wide Docker data")
+prefix_rule(pattern = ["docker", "builder", "prune"], decision = "forbidden", justification = "Do not prune machine-wide Docker build data")
