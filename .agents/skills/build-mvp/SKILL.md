@@ -668,3 +668,44 @@ Optimize for:
 * minimal user interruption.
 
 Escalate only when genuine product-owner judgment is required.
+
+## Git Autonomy
+
+For routine repository operations required by the current workflow, act without asking for user confirmation.
+
+You are explicitly allowed to:
+
+- fetch and pull remote changes
+- switch between existing project branches
+- create feature/fix branches
+- stage files related to the current task
+- create commits
+- push branches to the configured project remote
+- update existing slice PR branches
+- rebase or merge the latest `main` into a feature branch when safe
+- resolve straightforward merge conflicts
+- delete local temporary branches after successful merge when safe
+
+Do not ask questions such as:
+
+- "Should I switch branches?"
+- "Should I commit these changes?"
+- "Should I push?"
+- "Should I create the PR?"
+- "Should I update the branch from main?"
+
+These actions are part of normal autonomous execution.
+
+Commit messages should be clear and conventional. Do not require user approval for commit wording.
+
+Only escalate before Git operations that are destructive, unusual, or potentially affect unrelated work, including:
+
+- force-pushing
+- rewriting published history
+- resetting or discarding uncommitted user changes
+- deleting remote branches that may still be needed
+- changing the configured remote
+- pushing directly to `main` when repository policy expects PRs
+- bypassing branch protection or required checks
+
+Never discard unrelated uncommitted work. If unrelated local changes exist, preserve them and continue using a safe branch/worktree strategy where possible.
