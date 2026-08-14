@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      APP_DATA_DIR: /data
+      NODE_ENV: production
+    volumes:
+      - conf-simple-data:/data
+    restart: unless-stopped
+
+volumes:
+  conf-simple-data:
