@@ -35,6 +35,15 @@ async function setupAgent(app: ReturnType<typeof createApp>) {
   return agent;
 }
 
+async function acceptInvite(app: ReturnType<typeof createApp>, admin: ReturnType<typeof request.agent>, input: { email: string; displayName: string; password: string; role?: "admin" | "member" }) {
+  const invited = await admin.post("/api/invitations").send({ email: input.email, role: input.role ?? "member" });
+  expect(invited.status).toBe(201);
+  const agent = request.agent(app);
+  const accepted = await agent.post("/api/invitations/accept").send({ token: invited.body.token, displayName: input.displayName, password: input.password });
+  expect(accepted.status).toBe(201);
+  return { agent, member: accepted.body.user, invitation: invited.body };
+}
+
 describe("first-run persistence slice", () => {
   it("starts in setup and allows setup only once", async () => {
     const { app } = testApp();
@@ -357,5 +366,104 @@ describe("local files and media", () => {
       content: { type: "doc", content: [{ type: "image", attrs: { src: uploaded.body.url, alt: "wrong page" } }] },
     });
     expect(crossPage.status).toBe(400);
+  });
+});
+
+describe("workspace members and settings", () => {
+  it("creates an expiring invitation link and accepts it only once", async () => {
+    const { app, database } = testApp();
+    const admin = await setupAgent(app);
+    const invited = await admin.post("/api/invitations").send({ email: "dev@example.com", role: "member" });
+    expect(invited.status).toBe(201);
+    expect(invited.body.token).toMatch(/^[A-Za-z0-9_-]{40,}$/);
+    expect(invited.body.expiresAt).toBeTruthy();
+    const stored = database.prepare("SELECT token_hash AS tokenHash FROM workspace_invitations").get() as { tokenHash: string };
+    expect(stored.tokenHash).not.toBe(invited.body.token);
+    expect(stored.tokenHash).toMatch(/^[0-9a-f]{64}$/);
+
+    const details = await request(app).get(`/api/invitations/${invited.body.token}`);
+    expect(details.body).toMatchObject({ workspaceName: "Acme Engineering", email: "dev@example.com", role: "member", accountExists: false });
+    const member = request.agent(app);
+    const accepted = await member.post("/api/invitations/accept").send({
+      token: invited.body.token, displayName: "Dev User", password: "another safe password",
+    });
+    expect(accepted.status).toBe(201);
+    expect(accepted.body.workspace.role).toBe("member");
+    expect((await member.get("/api/bootstrap")).body.user.email).toBe("dev@example.com");
+    expect((await request(app).post("/api/invitations/accept").send({
+      token: invited.body.token, displayName: "Replay User", password: "another safe password",
+    })).status).toBe(404);
+  });
+
+  it("keeps management admin-only while members retain page editing rights", async () => {
+    const { app } = testApp();
+    const admin = await setupAgent(app);
+    const { agent: member, member: memberUser } = await acceptInvite(app, admin, {
+      email: "member@example.com", displayName: "Team Member", password: "member safe password",
+    });
+
+    const listed = await member.get("/api/members");
+    expect(listed.status).toBe(200);
+    expect(listed.body.map((item: { email: string }) => item.email)).toEqual(["jane@example.com", "member@example.com"]);
+    expect((await member.post("/api/invitations").send({ email: "blocked@example.com", role: "member" })).status).toBe(403);
+    expect((await member.patch("/api/workspace").send({ name: "Blocked rename" })).status).toBe(403);
+    expect((await member.patch(`/api/members/${memberUser.id}`).send({ role: "admin" })).status).toBe(403);
+    expect((await member.delete(`/api/members/${memberUser.id}`)).status).toBe(403);
+
+    const page = await member.post("/api/pages").send({ title: "Member runbook" });
+    expect(page.status).toBe(201);
+    expect((await member.put(`/api/pages/${page.body.id}`).send({
+      title: "Member-authored runbook", version: 1,
+      content: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Team-owned docs" }] }] },
+    })).status).toBe(200);
+  });
+
+  it("changes roles, renames the workspace, and revokes removed member sessions", async () => {
+    const { app } = testApp();
+    const admin = await setupAgent(app);
+    const adminBootstrap = await admin.get("/api/bootstrap");
+    const adminId = adminBootstrap.body.user.id;
+    const { agent: member, member: memberUser } = await acceptInvite(app, admin, {
+      email: "second@example.com", displayName: "Second Admin", password: "second safe password",
+    });
+
+    expect((await admin.patch(`/api/members/${memberUser.id}`).send({ role: "admin" })).status).toBe(200);
+    expect((await admin.patch(`/api/members/${adminId}`).send({ role: "member" })).body.error).toMatch(/another admin/i);
+    const renamed = await admin.patch("/api/workspace").send({ name: "Platform Docs" });
+    expect(renamed.status).toBe(200);
+    expect((await member.get("/api/bootstrap")).body.workspace.name).toBe("Platform Docs");
+
+    expect((await admin.patch(`/api/members/${memberUser.id}`).send({ role: "member" })).status).toBe(200);
+    expect((await admin.delete(`/api/members/${memberUser.id}`)).status).toBe(204);
+    expect((await member.get("/api/bootstrap")).body).toEqual({ needsSetup: false, requiresAuth: true });
+    expect((await request(app).post("/api/login").send({ email: "second@example.com", password: "second safe password" })).status).toBe(403);
+    expect((await admin.delete(`/api/members/${adminId}`)).body.error).toMatch(/own account/i);
+  });
+
+  it("prevents a workspace from losing its last admin", async () => {
+    const { app } = testApp();
+    const admin = await setupAgent(app);
+    const current = (await admin.get("/api/bootstrap")).body.user;
+    const demotion = await admin.patch(`/api/members/${current.id}`).send({ role: "member" });
+    expect(demotion.status).toBe(409);
+    expect((await admin.get("/api/bootstrap")).body.workspace.role).toBe("admin");
+  });
+
+  it("lets a removed account securely rejoin using its existing password", async () => {
+    const { app } = testApp();
+    const admin = await setupAgent(app);
+    const first = await acceptInvite(app, admin, {
+      email: "returning@example.com", displayName: "Returning User", password: "returning safe password",
+    });
+    expect((await admin.delete(`/api/members/${first.member.id}`)).status).toBe(204);
+    const reinvite = await admin.post("/api/invitations").send({ email: "returning@example.com", role: "member" });
+    const details = await request(app).get(`/api/invitations/${reinvite.body.token}`);
+    expect(details.body).toMatchObject({ accountExists: true, displayName: "Returning User" });
+    expect((await request(app).post("/api/invitations/accept").send({
+      token: reinvite.body.token, displayName: "Returning User", password: "wrong password",
+    })).status).toBe(401);
+    expect((await request(app).post("/api/invitations/accept").send({
+      token: reinvite.body.token, displayName: "Returning User", password: "returning safe password",
+    })).status).toBe(201);
   });
 });

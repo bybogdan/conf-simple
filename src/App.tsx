@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import { AuthScreen } from "./components/AuthScreen";
+import { InviteScreen } from "./components/InviteScreen";
 import { WorkspaceShell } from "./components/WorkspaceShell";
 import type { Bootstrap, Page, User, Workspace } from "./types";
 
 type ReadyState = { user: User; workspace: Workspace; pages: Page[] };
 
 export function App() {
+  const inviteToken = invitationToken(location.pathname);
   const [bootstrap, setBootstrap] = useState<Bootstrap | null>(null);
   const [ready, setReady] = useState<ReadyState | null>(null);
   const [error, setError] = useState("");
@@ -20,6 +22,9 @@ export function App() {
       .catch((caught: Error) => setError(caught.message));
   }, []);
 
+  if (inviteToken) return <InviteScreen token={inviteToken} onCancel={() => { history.replaceState(null, "", "/"); location.reload(); }} onReady={(next) => {
+    history.replaceState(null, "", "/"); setReady(next); setBootstrap({ needsSetup: false, requiresAuth: false });
+  }} />;
   if (error) return <FatalError message={error} />;
   if (!bootstrap) return <div className="loading-screen"><span className="mark">C</span></div>;
   if (!ready) {
@@ -38,6 +43,7 @@ export function App() {
     <WorkspaceShell
       {...ready}
       onPagesChange={(pages) => setReady((current) => current ? { ...current, pages } : current)}
+      onWorkspaceChange={(workspace) => setReady((current) => current ? { ...current, workspace } : current)}
       onLogout={async () => {
         await api.logout();
         setReady(null);
@@ -45,6 +51,11 @@ export function App() {
       }}
     />
   );
+}
+
+function invitationToken(pathname: string) {
+  const match = /^\/invite\/([^/]+)\/?$/.exec(pathname);
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
 function FatalError({ message }: { message: string }) {

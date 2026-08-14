@@ -140,7 +140,7 @@ QA result: **PASS** at `a8802da` after fixing sequential media insertion; 21/21 
 
 ## Slice 4 — Team and MVP Finishing
 
-**Status:** `TODO`
+**Status:** `IN_PROGRESS`
 
 Scope:
 
@@ -315,6 +315,6 @@ Routine implementation choices should be made independently.
 
 The next implementation target is:
 
-> **Slice 3 — Files and Media**
+> **Slice 4 — Team and MVP Finishing**
 
-Do not start Slice 4 until Slice 3 has passed its QA gate.
+Complete implementation verification, then move Slice 4 to its independent QA gate.

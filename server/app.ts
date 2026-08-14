@@ -1,7 +1,7 @@
 import express, { type Request, type Response } from "express";
 import helmet from "helmet";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { AppDatabase } from "./database.js";
 import { createSession, deleteSession, getSessionUser, hashPassword, verifyPassword } from "./auth.js";
@@ -39,6 +39,19 @@ const movePageSchema = z.object({
   position: z.number().int().nonnegative().optional(),
 });
 const restoreRevisionSchema = z.object({ version: z.number().int().positive() });
+const workspaceSchema = z.object({ name: z.string().trim().min(2).max(80) });
+const invitationSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(254),
+  role: z.enum(["admin", "member"]).default("member"),
+});
+const acceptInvitationSchema = z.object({
+  token: z.string().min(20).max(200),
+  displayName: z.string().trim().min(2).max(80),
+  password: z.string().min(10).max(200),
+});
+const memberRoleSchema = z.object({ role: z.enum(["admin", "member"]) });
+
+const INVITATION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 
 type SessionUser = NonNullable<ReturnType<typeof getSessionUser>>;
 
@@ -91,7 +104,50 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
     if (needsSetup) return response.json({ needsSetup: true });
     const user = currentUser(database, request);
     if (!user) return response.json({ needsSetup: false, requiresAuth: true });
+    if (!memberWorkspace(database, user.id)) {
+      deleteSession(database, readCookie(request, "conf_session"));
+      return response.json({ needsSetup: false, requiresAuth: true });
+    }
     return response.json({ needsSetup: false, requiresAuth: false, ...workspacePayload(database, user) });
+  });
+
+  app.get("/api/invitations/:token", (request, response) => {
+    const invitation = invitationByToken(database, String(request.params.token));
+    if (!invitation) return response.status(404).json({ error: "This invitation is invalid or has already been used" });
+    if (invitation.expiresAt <= new Date().toISOString()) return response.status(410).json({ error: "This invitation has expired. Ask an admin for a new link." });
+    const existing = database.prepare("SELECT id, display_name AS displayName FROM users WHERE email = ?").get(invitation.email) as { id: string; displayName: string } | undefined;
+    return response.json({ workspaceName: invitation.workspaceName, email: invitation.email, role: invitation.role, accountExists: Boolean(existing), displayName: existing?.displayName });
+  });
+
+  app.post("/api/invitations/accept", async (request, response, next) => {
+    try {
+      const input = acceptInvitationSchema.parse(request.body);
+      const invitation = invitationByToken(database, input.token);
+      if (!invitation) return response.status(404).json({ error: "This invitation is invalid or has already been used" });
+      if (invitation.expiresAt <= new Date().toISOString()) return response.status(410).json({ error: "This invitation has expired. Ask an admin for a new link." });
+
+      const existing = database.prepare("SELECT id, password_hash AS passwordHash FROM users WHERE email = ?").get(invitation.email) as { id: string; passwordHash: string } | undefined;
+      if (existing && !(await verifyPassword(input.password, existing.passwordHash))) {
+        return response.status(401).json({ error: "Enter the password for your existing account" });
+      }
+      const userId = existing?.id ?? randomUUID();
+      const passwordHash = existing ? null : await hashPassword(input.password);
+      database.transaction(() => {
+        if (!invitationByToken(database, input.token)) throw new InvitationUsedError();
+        if (!existing) {
+          database.prepare("INSERT INTO users (id, email, display_name, password_hash, created_at) VALUES (?, ?, ?, ?, ?)")
+            .run(userId, invitation.email, input.displayName, passwordHash, new Date().toISOString());
+        }
+        database.prepare("INSERT INTO workspace_members (workspace_id, user_id, role) VALUES (?, ?, ?)")
+          .run(invitation.workspaceId, userId, invitation.role);
+        database.prepare("DELETE FROM workspace_invitations WHERE token_hash = ?").run(hashInvitationToken(input.token));
+      })();
+      const acceptedUser = database.prepare("SELECT id, email, display_name AS displayName FROM users WHERE id = ?").get(userId) as SessionUser;
+      setSessionCookie(response, createSession(database, userId), options.secureCookies);
+      return response.status(201).json(workspacePayload(database, acceptedUser));
+    } catch (error) {
+      next(error);
+    }
   });
 
   app.post("/api/setup", async (request, response, next) => {
@@ -128,6 +184,7 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
       if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
         return response.status(401).json({ error: "Email or password is incorrect" });
       }
+      if (!memberWorkspace(database, user.id)) return response.status(403).json({ error: "This account is not a workspace member" });
       setSessionCookie(response, createSession(database, user.id), options.secureCookies);
       return response.json(workspacePayload(database, user));
     } catch (error) {
@@ -140,6 +197,82 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
     response.clearCookie("conf_session", { path: "/" });
     response.status(204).end();
   });
+
+  app.get("/api/members", requireUser(database, (_request, response, user) => {
+    const workspace = memberWorkspace(database, user.id);
+    if (!workspace) return response.status(403).json({ error: "Workspace membership required" });
+    const members = database.prepare(`
+      SELECT users.id, users.email, users.display_name AS displayName, workspace_members.role,
+        users.created_at AS joinedAt
+      FROM workspace_members JOIN users ON users.id = workspace_members.user_id
+      WHERE workspace_members.workspace_id = ?
+      ORDER BY CASE workspace_members.role WHEN 'admin' THEN 0 ELSE 1 END, users.display_name COLLATE NOCASE
+    `).all(workspace.id);
+    return response.json(members);
+  }));
+
+  app.post("/api/invitations", requireUser(database, (request, response, user) => {
+    const input = invitationSchema.parse(request.body);
+    const workspace = adminWorkspace(database, user.id);
+    if (!workspace) return response.status(403).json({ error: "Admin access required" });
+    const existingMember = database.prepare(`
+      SELECT 1 FROM users JOIN workspace_members ON workspace_members.user_id = users.id
+      WHERE users.email = ? AND workspace_members.workspace_id = ?
+    `).get(input.email, workspace.id);
+    if (existingMember) return response.status(409).json({ error: "This person is already a member" });
+    const token = randomBytes(32).toString("base64url");
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + INVITATION_TTL_MS).toISOString();
+    database.prepare(`
+      INSERT INTO workspace_invitations (token_hash, workspace_id, email, role, invited_by, expires_at, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(workspace_id, email) DO UPDATE SET token_hash = excluded.token_hash, role = excluded.role,
+        invited_by = excluded.invited_by, expires_at = excluded.expires_at, created_at = excluded.created_at
+    `).run(hashInvitationToken(token), workspace.id, input.email, input.role, user.id, expiresAt, now.toISOString());
+    return response.status(201).json({ token, email: input.email, role: input.role, expiresAt });
+  }));
+
+  app.patch("/api/members/:id", requireUser(database, (request, response, user) => {
+    const input = memberRoleSchema.parse(request.body);
+    const workspace = adminWorkspace(database, user.id);
+    if (!workspace) return response.status(403).json({ error: "Admin access required" });
+    const memberId = String(request.params.id);
+    const target = database.prepare("SELECT role FROM workspace_members WHERE workspace_id = ? AND user_id = ?").get(workspace.id, memberId) as { role: "admin" | "member" } | undefined;
+    if (!target) return response.status(404).json({ error: "Member not found" });
+    if (memberId === user.id && input.role !== target.role) {
+      return response.status(409).json({ error: "Ask another admin to change your role" });
+    }
+    if (target.role === "admin" && input.role === "member" && adminCount(database, workspace.id) === 1) {
+      return response.status(409).json({ error: "Promote another admin before changing the last admin’s role" });
+    }
+    database.prepare("UPDATE workspace_members SET role = ? WHERE workspace_id = ? AND user_id = ?").run(input.role, workspace.id, memberId);
+    return response.json({ id: memberId, role: input.role });
+  }));
+
+  app.delete("/api/members/:id", requireUser(database, (request, response, user) => {
+    const workspace = adminWorkspace(database, user.id);
+    if (!workspace) return response.status(403).json({ error: "Admin access required" });
+    const memberId = String(request.params.id);
+    if (memberId === user.id) return response.status(409).json({ error: "You cannot remove your own account" });
+    const target = database.prepare("SELECT role FROM workspace_members WHERE workspace_id = ? AND user_id = ?").get(workspace.id, memberId) as { role: "admin" | "member" } | undefined;
+    if (!target) return response.status(404).json({ error: "Member not found" });
+    if (target.role === "admin" && adminCount(database, workspace.id) === 1) {
+      return response.status(409).json({ error: "Promote another admin before removing the last admin" });
+    }
+    database.transaction(() => {
+      database.prepare("DELETE FROM workspace_members WHERE workspace_id = ? AND user_id = ?").run(workspace.id, memberId);
+      database.prepare("DELETE FROM sessions WHERE user_id = ?").run(memberId);
+    })();
+    return response.status(204).end();
+  }));
+
+  app.patch("/api/workspace", requireUser(database, (request, response, user) => {
+    const input = workspaceSchema.parse(request.body);
+    const workspace = adminWorkspace(database, user.id);
+    if (!workspace) return response.status(403).json({ error: "Admin access required" });
+    database.prepare("UPDATE workspaces SET name = ? WHERE id = ?").run(input.name, workspace.id);
+    return response.json({ ...workspace, name: input.name });
+  }));
 
   app.post("/api/pages", requireUser(database, (request, response, user) => {
     const input = createPageSchema.parse(request.body);
@@ -267,6 +400,7 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
     if ((error as { type?: string }).type === "entity.too.large") return response.status(413).json({ error: "Files must be 10 MB or smaller" });
     if (error instanceof z.ZodError) return response.status(400).json({ error: "Please check the submitted fields", details: error.issues });
     if (error instanceof SetupCompleteError) return response.status(409).json({ error: "Setup has already been completed" });
+    if (error instanceof InvitationUsedError) return response.status(409).json({ error: "This invitation has already been used" });
     if (error instanceof PageHierarchyError) return response.status(error.status).json({ error: error.message });
     console.error(error);
     return response.status(500).json({ error: "Unexpected server error" });
@@ -298,6 +432,29 @@ function memberWorkspace(database: AppDatabase, userId: string) {
     FROM workspace_members JOIN workspaces ON workspaces.id = workspace_members.workspace_id
     WHERE workspace_members.user_id = ? LIMIT 1
   `).get(userId) as { id: string; name: string; role: "admin" | "member" } | undefined;
+}
+
+function adminWorkspace(database: AppDatabase, userId: string) {
+  const workspace = memberWorkspace(database, userId);
+  return workspace?.role === "admin" ? workspace : undefined;
+}
+
+function adminCount(database: AppDatabase, workspaceId: string) {
+  return Number((database.prepare("SELECT COUNT(*) AS count FROM workspace_members WHERE workspace_id = ? AND role = 'admin'").get(workspaceId) as { count: number }).count);
+}
+
+function invitationByToken(database: AppDatabase, token: string) {
+  return database.prepare(`
+    SELECT workspace_invitations.workspace_id AS workspaceId, workspace_invitations.email,
+      workspace_invitations.role, workspace_invitations.expires_at AS expiresAt,
+      workspaces.name AS workspaceName
+    FROM workspace_invitations JOIN workspaces ON workspaces.id = workspace_invitations.workspace_id
+    WHERE workspace_invitations.token_hash = ?
+  `).get(hashInvitationToken(token)) as { workspaceId: string; workspaceName: string; email: string; role: "admin" | "member"; expiresAt: string } | undefined;
+}
+
+function hashInvitationToken(token: string) {
+  return createHash("sha256").update(token).digest("hex");
 }
 
 function pageById(database: AppDatabase, id: string) {
@@ -393,3 +550,4 @@ function emptyDocument() {
 }
 
 class SetupCompleteError extends Error {}
+class InvitationUsedError extends Error {}

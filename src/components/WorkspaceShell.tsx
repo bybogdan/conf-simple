@@ -4,16 +4,18 @@ import { api } from "../api";
 import { pagePath, sortedChildren } from "../pageTree";
 import type { Page, User, Workspace } from "../types";
 import { HistoryPanel } from "./HistoryPanel";
+import { MembersPage } from "./MembersPage";
 import { MovePageDialog } from "./MovePageDialog";
 import { NewPage } from "./NewPage";
 import { PageEditor } from "./PageEditor";
 import { SearchPalette } from "./SearchPalette";
+import { SettingsPage } from "./SettingsPage";
 
-type Props = { user: User; workspace: Workspace; pages: Page[]; onPagesChange: (pages: Page[]) => void; onLogout: () => void };
+type Props = { user: User; workspace: Workspace; pages: Page[]; onPagesChange: (pages: Page[]) => void; onWorkspaceChange: (workspace: Workspace) => void; onLogout: () => void };
 
-export function WorkspaceShell({ user, workspace, pages, onPagesChange, onLogout }: Props) {
+export function WorkspaceShell({ user, workspace, pages, onPagesChange, onWorkspaceChange, onLogout }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(pages[0]?.id ?? null);
-  const [mode, setMode] = useState<"read" | "edit" | "new">(pages.length ? "read" : "new");
+  const [mode, setMode] = useState<"read" | "edit" | "new" | "members" | "settings">(pages.length ? "read" : "new");
   const [newParentId, setNewParentId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set(pages.filter((page) => pages.some((child) => child.parentId === page.id)).map((page) => page.id)));
   const [pageMenuId, setPageMenuId] = useState<string | null>(null);
@@ -28,6 +30,7 @@ export function WorkspaceShell({ user, workspace, pages, onPagesChange, onLogout
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setSearchOpen(true); }
+      if (event.key === "Escape") setAccountOpen(false);
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
@@ -60,7 +63,7 @@ export function WorkspaceShell({ user, workspace, pages, onPagesChange, onLogout
     }
   }
 
-  return <div className="workspace-shell" onClick={() => setPageMenuId(null)}>
+  return <div className="workspace-shell" onClick={() => { setPageMenuId(null); setAccountOpen(false); }}>
     <aside className="sidebar">
       <div className="workspace-name"><span className="workspace-mark">{workspace.name.charAt(0).toUpperCase()}</span><span>{workspace.name}</span></div>
       <div className="sidebar-actions">
@@ -80,14 +83,14 @@ export function WorkspaceShell({ user, workspace, pages, onPagesChange, onLogout
           }} onMove={move} onDelete={remove} />
       </nav>
       <div className="sidebar-footer">
-        <button><Users size={14} />Members</button><button><Settings size={14} />Settings</button><div className="sidebar-divider" />
-        <button className="account-button" onClick={(event) => { event.stopPropagation(); setAccountOpen((open) => !open); }}><span className="avatar">{initials(user.displayName)}</span><span><strong>{user.displayName}</strong><small>{workspace.role === "admin" ? "Admin" : "Member"}</small></span><MoreHorizontal size={15} /></button>
-        {accountOpen && <button className="logout-popover" onClick={onLogout}><LogOut size={14} />Sign out</button>}
+        <button className={mode === "members" ? "active" : ""} onClick={() => { setMode("members"); setHistoryOpen(false); }}><Users size={14} />Members</button><button className={mode === "settings" ? "active" : ""} onClick={() => { setMode("settings"); setHistoryOpen(false); }}><Settings size={14} />Settings</button><div className="sidebar-divider" />
+        <button className="account-button" aria-expanded={accountOpen} aria-haspopup="menu" onClick={(event) => { event.stopPropagation(); setAccountOpen((open) => !open); }}><span className="avatar">{initials(user.displayName)}</span><span><strong>{user.displayName}</strong><small>{workspace.role === "admin" ? "Admin" : "Member"}</small></span><MoreHorizontal size={15} /></button>
+        {accountOpen && <div className="account-popover" role="menu" onClick={(event) => event.stopPropagation()}><div><strong>{user.displayName}</strong><small>{user.email}</small></div><button role="menuitem" onClick={onLogout}><LogOut size={14} />Sign out</button></div>}
       </div>
     </aside>
     <main className="main-pane">
-      <header className="topbar">{mode === "new" ? <span>{newParentId ? "New child page" : "New page"}</span> : breadcrumbs.map((page, index) => <span key={page.id}>{index > 0 && <b>›</b>}{page.title}</span>)}</header>
-      {mode === "new" ? <NewPage parentTitle={pages.find((page) => page.id === newParentId)?.title} onCancel={() => setMode(selected ? "read" : "new")} onCreate={async (title, content) => {
+      <header className="topbar">{mode === "members" ? <span>Members</span> : mode === "settings" ? <span>Settings</span> : mode === "new" ? <span>{newParentId ? "New child page" : "New page"}</span> : breadcrumbs.map((page, index) => <span key={page.id}>{index > 0 && <b>›</b>}{page.title}</span>)}</header>
+      {mode === "members" ? <MembersPage user={user} workspace={workspace} /> : mode === "settings" ? <SettingsPage workspace={workspace} onWorkspaceChange={onWorkspaceChange} /> : mode === "new" ? <NewPage parentTitle={pages.find((page) => page.id === newParentId)?.title} onCancel={() => setMode(selected ? "read" : "new")} onCreate={async (title, content) => {
         const page = await api.createPage({ title, content, parentId: newParentId });
         onPagesChange([...pages, page]); setSelectedId(page.id); setMode("edit");
       }} /> : selected ? <PageEditor page={selected} editing={mode === "edit"} onEdit={() => setMode("edit")} onHistory={() => setHistoryOpen(true)} onCancel={() => setMode("read")} onSaved={(page) => { onPagesChange(pages.map((item) => item.id === page.id ? page : item)); setMode("read"); }} /> : <EmptyWorkspace onCreate={() => { setNewParentId(null); setMode("new"); }} />}
