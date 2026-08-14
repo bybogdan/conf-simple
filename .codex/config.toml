@@ -1,0 +1,11 @@
+# Repository-local Codex defaults. Loaded only after this project is trusted.
+approval_policy = "on-request"
+approvals_reviewer = "auto_review"
+sandbox_mode = "workspace-write"
+
+[sandbox_workspace_write]
+network_access = true
+
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 3

@@ -633,3 +633,66 @@ Keep the deployment boring.
 Keep the data owned by the user.
 
 Do not turn it into a workspace platform.
+
+---
+
+## 24. Autonomous Repository Operations
+
+Treat routine development operations inside this repository as pre-authorized when they are required to complete the user's requested work.
+
+Proceed without asking for confirmation to:
+
+- inspect, create, and switch project branches,
+- fetch and pull remote changes,
+- stage task-related files,
+- commit and push feature or fix branches,
+- create, update, review, and merge pull requests after required QA passes,
+- install project dependencies,
+- run tests, type checks, builds, and security audits,
+- build and run the local Docker Compose stack,
+- restart local development containers,
+- access the application and APIs on localhost or `127.0.0.1`,
+- inspect local browser, server, and container logs,
+- create isolated test data and disposable test containers.
+
+Escalate only when an operation could materially affect security, privacy, unrelated user work, persistent data, machine-wide state, external systems outside the configured project repository, or repository protections.
+
+Always require explicit user approval before:
+
+- force-pushing or rewriting published history,
+- discarding unrelated uncommitted changes,
+- deleting persistent Docker volumes or non-test user data,
+- changing Git remotes or credentials,
+- bypassing branch protection or required checks,
+- exposing a local service publicly,
+- using paid infrastructure or third-party services not already authorized,
+- running destructive machine-wide cleanup.
+
+An approval prompt imposed by the sandbox or host application is a technical boundary, not a reason to ask the user an additional conversational confirmation first.
+
+---
+
+## 25. Agent Team Operating Model
+
+Operate as a small independent engineering team when work is large enough to benefit from delegation.
+
+The primary agent acts as technical lead and integration owner. Use the project roles in `.codex/agents/` for bounded work:
+
+- `explorer` maps code, dependencies, and risks without editing,
+- `implementer` owns a defined slice or focused fix,
+- `qa_reviewer` independently executes QA and release-readiness gates,
+- `release_manager` coordinates branches, PRs, checks, merges, and post-merge verification.
+
+Use up to three subagents concurrently when their work is genuinely independent. Prefer safe parallelism for exploration, implementation, and QA preparation, but serialize work that overlaps migrations, schemas, APIs, or high-conflict files.
+
+Maintain these boundaries:
+
+- one clear owner for each implementation scope,
+- independent QA must not be performed by the implementation context,
+- the primary agent remains responsible for integration quality,
+- agents must preserve unrelated local changes,
+- agents must share concrete artifacts and evidence rather than trusting summaries,
+- no agent may broaden MVP scope without a requirement,
+- no agent may bypass the safety and escalation rules above.
+
+Do not ask the user to coordinate routine handoffs between agents. Continue through implementation, verification, QA, fixes, delivery, and post-merge checks until the requested outcome is complete or genuine product-owner judgment is required.
