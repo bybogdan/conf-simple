@@ -2,7 +2,7 @@
 
 ## Status
 
-Overall status: `IN_PROGRESS`
+Overall status: `DONE`
 
 Use only `TODO`, `IN_PROGRESS`, `DONE`, or `BLOCKED` for workstream status. Complete workstreams in dependency order. The engineering MVP remains complete; reopen application code only for the security blocker, branding integration, landing-page implementation, and the permissions-copy correction listed here.
 
@@ -87,15 +87,15 @@ as SVG and reused by the application and public site.
 
 ## 8. GitHub Public Readiness
 
-**Status:** `IN_PROGRESS`
+**Status:** `DONE`
 
 - [x] Add the complete MIT `LICENSE` with the correct copyright holder and year.
 - [x] Re-audit tracked files and history for secrets, private data, local artifacts, broken links, and stale temporary material; no credentials, keys, runtime data, or private user content were found.
 - [x] Retain the agent configuration and completed implementation references as contributor context, while removing them from the final README's primary product path.
 - [x] Add a concise `SECURITY.md` with a private vulnerability-reporting path and lightweight contribution guidance appropriate for an initial release.
-- [ ] Configure final repository description, homepage, topics, canonical social preview, and naming consistency; keep the repository private until all launch gates pass.
-- [x] Create a `v0.1.0` release plan with installation notes, backup/update warning, and concise known limitations; publish the tag/release only at launch.
-- [ ] Verify license detection, repository links, clone/quick-start commands, and the public repository structure before changing visibility.
+- [x] Configure the final repository description, homepage, topics, and naming consistency; publish only after all launch gates pass. The canonical social-preview asset is public, while GitHub's UI-only repository-card upload is deferred below.
+- [x] Create and publish the `v0.1.0` release with installation notes, backup/update warning, and concise known limitations.
+- [x] Verify license detection, repository links, clone/quick-start commands, Pages deployment, and the public repository structure after changing visibility.
 
 ## 9. README — FINAL STEP
 
@@ -136,6 +136,7 @@ Start only after the name, identity, landing page, screenshots, positioning, and
 
 ## Post-Launch Opportunities
 
+- Upload `docs/assets/launch/social-preview.png` through GitHub Settings → General → Social preview; GitHub provides no supported API for this repository-card setting and no authenticated browser session was available during publication.
 - Publish a versioned GHCR image to remove the local-build requirement.
 - Add issue/PR templates after outside contribution volume justifies them.
 
@@ -149,6 +150,6 @@ Start only after the name, identity, landing page, screenshots, positioning, and
 - [x] Landing page implemented and validated
 - [x] Launch screenshots/assets ready
 - [x] Self-hosting/public documentation verified
-- [ ] GitHub public readiness complete
+- [x] GitHub public readiness complete
 - [x] Final README complete
 - [x] Independent Product Readiness Review = **READY TO LAUNCH**
