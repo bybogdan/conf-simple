@@ -44,8 +44,8 @@ Make Conf Simple a credible public MIT-licensed MVP that small software teams ca
 **Status:** `TODO`
 
 - [ ] Integrate the approved name, logo/wordmark, and icon into setup, login, invitation, workspace identity where appropriate, browser title, favicon, and basic page metadata.
-- [ ] Add concise description and social metadata to the public HTML surface where applicable.
-- [ ] Correct the Members-page statement that Members can delete pages; deletion is admin-only.
+- [x] Add concise description and social metadata to the public HTML surface where applicable.
+- [x] Correct the Members-page statement that Members can delete pages; deletion is admin-only.
 - [ ] Validate branding and naming consistency without redesigning the application shell or editor.
 
 ## 5. Landing Page
@@ -62,35 +62,35 @@ Make Conf Simple a credible public MIT-licensed MVP that small software teams ca
 
 **Status:** `TODO`
 
-- [ ] Prepare a clean synthetic demo workspace in the actual running application; include realistic technical documentation and no personal data, secrets, local paths, or unfinished states.
-- [ ] Capture a hero screenshot showing a finished page and useful nested page tree.
-- [ ] Capture 3–5 representative states: rich technical editing with media/attachment, content search, revision history, nested organization, and member invitation.
+- [x] Prepare a clean synthetic demo workspace in the actual running application; include realistic technical documentation and no personal data, secrets, local paths, or unfinished states.
+- [x] Capture a hero screenshot showing a finished page and useful nested page tree.
+- [x] Capture 3–5 representative states: rich technical editing with media/attachment, content search, revision history, nested organization, and member invitation.
 - [ ] Compose/export a GitHub social-preview image using the canonical identity and strongest product state.
 - [ ] Prepare Product Hunt gallery images from the same screenshots and identity.
 - [ ] Record a concise 60–90 second demo/GIF/video showing setup, runbook creation, nesting, search, history, and invitation; keep this lightweight and factual.
 
 ## 7. Self-Hosting / Public Documentation
 
-**Status:** `TODO`
+**Status:** `DONE`
 
-- [ ] Document supported configuration, including `APP_DATA_DIR`, `PORT`, `NODE_ENV`, and `SECURE_COOKIES` where relevant.
-- [ ] Add production guidance stating that port 3000 is plain HTTP, requiring TLS through a reverse proxy and `SECURE_COOKIES=true`; warn against exposing port 3000 directly to the internet.
-- [ ] Make installation prerequisites and the source-build Docker path explicit from clone through first-run setup.
-- [ ] Define one repeatable update flow: back up, fetch/checkout a release, rebuild/recreate, run health checks, inspect logs, and recover if startup fails.
-- [ ] Update backup guidance to require a fresh empty or timestamped destination and verify that `database.sqlite` and `uploads/` are present together.
-- [ ] Add compact troubleshooting for port conflicts, unhealthy/startup or migration failures, storage permissions/disk space, reverse-proxy/cookie problems, and support/reporting paths.
-- [ ] Re-verify fresh install, restart/recreation persistence, backup, restore, update instructions, uploads, health checks, and clean logs against the final documentation.
+- [x] Document supported configuration, including `APP_DATA_DIR`, `PORT`, `NODE_ENV`, and `SECURE_COOKIES` where relevant.
+- [x] Add production guidance stating that port 3000 is plain HTTP, requiring TLS through a reverse proxy and `SECURE_COOKIES=true`; warn against exposing port 3000 directly to the internet.
+- [x] Make installation prerequisites and the source-build Docker path explicit from clone through first-run setup.
+- [x] Define one repeatable update flow: back up, fetch/checkout a release, rebuild/recreate, run health checks, inspect logs, and recover if startup fails.
+- [x] Update backup guidance to require a fresh empty or timestamped destination and verify that `database.sqlite` and `uploads/` are present together.
+- [x] Add compact troubleshooting for port conflicts, unhealthy/startup or migration failures, storage permissions/disk space, reverse-proxy/cookie problems, and support/reporting paths.
+- [x] Re-verify fresh install, restart/recreation persistence, backup, restore, update instructions, uploads, health checks, and clean logs against the final documentation.
 
 ## 8. GitHub Public Readiness
 
 **Status:** `TODO`
 
-- [ ] Add the complete MIT `LICENSE` with the correct copyright holder and year.
-- [ ] Re-audit tracked files and history for secrets, private data, local artifacts, broken links, and stale temporary material.
-- [ ] Decide deliberately which agent/process files and internal implementation history should remain public; keep only material that helps contributors or explains the project.
-- [ ] Add a concise `SECURITY.md` with a private vulnerability-reporting path and lightweight contribution guidance appropriate for an initial release.
+- [x] Add the complete MIT `LICENSE` with the correct copyright holder and year.
+- [x] Re-audit tracked files and history for secrets, private data, local artifacts, broken links, and stale temporary material; no credentials, keys, runtime data, or private user content were found.
+- [x] Retain the agent configuration and completed implementation references as contributor context, while removing them from the final README's primary product path.
+- [x] Add a concise `SECURITY.md` with a private vulnerability-reporting path and lightweight contribution guidance appropriate for an initial release.
 - [ ] Configure final repository description, homepage, topics, canonical social preview, and naming consistency; keep the repository private until all launch gates pass.
-- [ ] Create a `v0.1.0` release plan with installation notes, backup/update warning, and concise known limitations; publish the tag/release only at launch.
+- [x] Create a `v0.1.0` release plan with installation notes, backup/update warning, and concise known limitations; publish the tag/release only at launch.
 - [ ] Verify license detection, repository links, clone/quick-start commands, and the public repository structure before changing visibility.
 
 ## 9. README — FINAL STEP
@@ -118,15 +118,15 @@ Start only after the name, identity, landing page, screenshots, positioning, and
 ## Launch Blockers
 
 - [x] Authentication responses do not expose `passwordHash` or any other password verifier/secret.
-- [ ] The repository contains a valid MIT license.
-- [ ] Production HTTPS, reverse-proxy, and secure-cookie requirements are documented and verified.
+- [x] The repository contains a valid MIT license.
+- [x] Production HTTPS, reverse-proxy, and secure-cookie requirements are documented and verified.
 - [ ] An evaluatable public launch surface exists: canonical identity, minimal landing/product page, real screenshots, clear CTA, and social preview.
 
 ## Important Improvements
 
-- [ ] Correct Member deletion permissions copy.
-- [ ] Make update, backup, and troubleshooting instructions operationally repeatable.
-- [ ] Curate public repository/process documentation and add lightweight security/contribution guidance.
+- [x] Correct Member deletion permissions copy.
+- [x] Make update, backup, and troubleshooting instructions operationally repeatable.
+- [x] Curate public repository/process documentation and add lightweight security/contribution guidance.
 - [ ] Prepare coherent Product Hunt gallery assets and a short factual demo.
 
 ## Post-Launch Opportunities
@@ -143,7 +143,7 @@ Start only after the name, identity, landing page, screenshots, positioning, and
 - [ ] Landing page designed in Figma
 - [ ] Landing page implemented and validated
 - [ ] Launch screenshots/assets ready
-- [ ] Self-hosting/public documentation verified
+- [x] Self-hosting/public documentation verified
 - [ ] GitHub public readiness complete
 - [ ] Final README complete
 - [ ] Independent Product Readiness Review = **READY TO LAUNCH**

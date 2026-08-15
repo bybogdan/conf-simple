@@ -75,7 +75,7 @@ export function MembersPage({ user, workspace }: { user: User; workspace: Worksp
         {isAdmin ? <button className="icon-button danger-icon" aria-label={`Remove ${member.displayName}`} disabled={busyId === member.id || member.id === user.id} onClick={() => void remove(member)}><Trash2 size={14} /></button> : <span />}
       </div>)}
     </div>
-    <p className="management-note"><UserRound size={13} />Members can create, edit, move, and delete pages. Only admins can manage members and workspace settings.</p>
+    <p className="management-note"><UserRound size={13} />Members can create, edit, and move pages. Only admins can delete pages, manage members, and change workspace settings.</p>
   </section>;
 }
 
