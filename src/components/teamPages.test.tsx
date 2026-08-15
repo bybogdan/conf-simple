@@ -1,8 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { User, Workspace } from "../types";
+import type { Page, User, Workspace } from "../types";
 import { MembersPage } from "./MembersPage";
 import { SettingsPage } from "./SettingsPage";
+import { PageRows } from "./WorkspaceShell";
 
 const user: User = { id: "user-1", displayName: "Jane Chen", email: "jane@example.com" };
 
@@ -31,5 +32,24 @@ describe("team management UI permissions", () => {
     expect(adminMarkup).not.toContain("Only workspace admins can change these settings");
     expect(memberMarkup).toContain("Only workspace admins can change these settings");
     expect(memberMarkup).toMatch(/<input[^>]+disabled=""/);
+  });
+
+  it("shows permanent page deletion only to admins", () => {
+    const page: Page = {
+      id: "page-1", parentId: null, title: "Runbook", content: { type: "doc" }, position: 0, version: 1,
+      createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z", updatedBy: "Jane Chen",
+    };
+    const baseProps = {
+      pages: [page], parentId: null, selectedId: page.id, expanded: new Set<string>(), menuId: page.id,
+      onSelect: () => undefined, onToggle: () => undefined, onMenu: () => undefined, onAddChild: () => undefined,
+      onMoveTarget: () => undefined, onMove: async () => undefined, onDelete: async () => undefined,
+    };
+
+    const adminMarkup = renderToStaticMarkup(<>{PageRows({ ...baseProps, canDelete: true })}</>);
+    const memberMarkup = renderToStaticMarkup(<>{PageRows({ ...baseProps, canDelete: false })}</>);
+
+    expect(adminMarkup).toContain("Delete page");
+    expect(memberMarkup).not.toContain("Delete page");
+    expect(memberMarkup).toContain("Move to…");
   });
 });
