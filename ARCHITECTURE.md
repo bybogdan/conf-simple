@@ -1,6 +1,6 @@
 # Architecture
 
-Conf Simple is one TypeScript/Node.js application. In production, one Express process serves both the JSON API and the Vite-built React client.
+Pagecairn is one TypeScript/Node.js application. In production, one Express process serves both the JSON API and the Vite-built React client.
 
 - **Application:** React 19 + Vite 7 client, Express 5 server, Node.js 22 LTS runtime. This is a small, conventional single-process deployment.
 - **Database:** `better-sqlite3` with readable, version-controlled SQL migrations. SQLite runs with foreign keys enabled and WAL mode; no ORM layer is added because the current schema and queries are small.

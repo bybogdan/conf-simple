@@ -1,6 +1,6 @@
 # Product screenshots
 
-These images were captured from the real Conf Simple production build at
+These images were captured from the real Pagecairn production build at
 1280×720 using a disposable local installation. The fictional workspace,
 people, email addresses, pages, and attachments were created only for launch
 evaluation; they contain no customer or maintainer data.
@@ -16,7 +16,7 @@ evaluation; they contain no customer or maintainer data.
 | `members.jpg` | Local member roles and invitation-link workflow |
 
 The diagram visible in the deployment runbook was generated with OpenAI image
-generation in built-in output mode, then uploaded through Conf Simple's real
+generation in built-in output mode, then uploaded through Pagecairn's real
 attachment API. Prompt:
 
 > Clean wide 3:2 minimal isometric technical diagram of a single self-hosted

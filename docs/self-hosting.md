@@ -1,6 +1,6 @@
-# Self-hosting Conf Simple
+# Self-hosting Pagecairn
 
-Conf Simple runs as one application container with SQLite and local uploads in
+Pagecairn runs as one application container with SQLite and local uploads in
 one persistent volume. No database, cache, object store, or email service is
 required.
 
@@ -51,7 +51,7 @@ installation's data.
 
 The application listens with plain HTTP. The default Compose file publishes
 that HTTP service as port 3000 on every host interface. **Do not expose port
-3000 directly to the internet.** Put Conf Simple behind a TLS-terminating
+3000 directly to the internet.** Put Pagecairn behind a TLS-terminating
 reverse proxy such as Caddy, nginx, or Traefik.
 
 On a host where the reverse proxy runs outside this Compose project, change the
@@ -214,7 +214,7 @@ plain HTTP. Check the browser network panel and both proxy and application logs.
 
 ### Login returns `429 Too Many Requests`
 
-Conf Simple limits repeated password checks to protect the single application
+Pagecairn limits repeated password checks to protect the single application
 process from brute-force and resource-exhaustion attempts. Stop retrying and
 wait for the number of seconds in the response's `Retry-After` header. A
 successful authentication clears the limiter for that account or invitation.

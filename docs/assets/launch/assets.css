@@ -167,7 +167,7 @@ h1 {
   z-index: 2;
   top: 160px;
   left: 64px;
-  width: 590px;
+  width: 530px;
 }
 
 .g1-copy h1 {
@@ -176,9 +176,9 @@ h1 {
 
 .g1-shot {
   position: absolute;
-  right: -116px;
+  right: -150px;
   bottom: -16px;
-  width: 760px;
+  width: 720px;
   transform: rotate(-1.2deg);
 }
 
@@ -201,9 +201,9 @@ h1 {
 
 .feature-shot {
   position: absolute;
-  left: 64px;
-  bottom: -118px;
-  width: 1142px;
+  left: 135px;
+  bottom: -192px;
+  width: 1000px;
 }
 
 .split {
@@ -244,7 +244,7 @@ h1 {
   position: absolute;
   top: 120px;
   left: 64px;
-  width: 560px;
+  width: 530px;
 }
 
 .history-copy h1 {
@@ -253,7 +253,7 @@ h1 {
 
 .history-shot {
   position: absolute;
-  right: -40px;
+  right: -120px;
   bottom: 62px;
   width: 760px;
 }
@@ -308,6 +308,12 @@ h1 {
   right: -144px;
   bottom: 50px;
   width: 720px;
+}
+
+.host .gallery-footer {
+  right: auto;
+  left: 64px;
+  bottom: 28px;
 }
 
 .storage {

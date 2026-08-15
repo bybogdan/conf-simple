@@ -19,6 +19,6 @@ currently guaranteed.
 
 ## Supported versions
 
-Conf Simple is an early-stage project. Security fixes are provided for the most
+Pagecairn is an early-stage project. Security fixes are provided for the most
 recent released version. Users should back up their complete data directory and
 upgrade to the latest release after reviewing its release notes.
