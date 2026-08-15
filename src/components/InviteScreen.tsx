@@ -20,7 +20,7 @@ export function InviteScreen({ token, onReady, onCancel }: { token: string; onRe
     }).catch((caught: Error) => setError(caught.message)).finally(() => setLoading(false));
   }, [token]);
 
-  if (loading) return <div className="loading-screen" role="status" aria-label="Loading Conf Simple invitation"><BrandMark className="brand-mark" /></div>;
+  if (loading) return <div className="loading-screen" role="status" aria-label="Loading Pagecairn invitation"><BrandMark className="brand-mark" /></div>;
   if (!invitation) return <main className="fatal"><h1>Invitation unavailable</h1><p>{error}</p><button className="secondary" onClick={onCancel}>Go to sign in</button></main>;
 
   return <main className="auth-screen">

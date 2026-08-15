@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve Conf Simple. The project is intentionally focused: a
+Thanks for helping improve Pagecairn. The project is intentionally focused: a
 small, self-hosted wiki for software teams.
 
 ## Before starting

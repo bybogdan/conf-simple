@@ -27,7 +27,7 @@ export function App() {
     history.replaceState(null, "", "/"); setReady(next); setBootstrap({ needsSetup: false, requiresAuth: false });
   }} />;
   if (error) return <FatalError message={error} />;
-  if (!bootstrap) return <div className="loading-screen" role="status" aria-label="Loading Conf Simple"><BrandMark className="brand-mark" /></div>;
+  if (!bootstrap) return <div className="loading-screen" role="status" aria-label="Loading Pagecairn"><BrandMark className="brand-mark" /></div>;
   if (!ready) {
     return (
       <AuthScreen
@@ -67,5 +67,5 @@ export function invitationToken(pathname: string) {
 }
 
 function FatalError({ message }: { message: string }) {
-  return <main className="fatal"><h1>Couldn’t open Conf Simple</h1><p>{message}</p><button onClick={() => location.reload()}>Try again</button></main>;
+  return <main className="fatal"><h1>Couldn’t open Pagecairn</h1><p>{message}</p><button onClick={() => location.reload()}>Try again</button></main>;
 }

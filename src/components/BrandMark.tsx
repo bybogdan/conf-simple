@@ -5,8 +5,8 @@ type BrandMarkProps = Omit<SVGProps<SVGSVGElement>, "children"> & {
 };
 
 /**
- * The canonical Conf Simple mark: a folded document with a small C-shaped
- * counter cut into the page. Keep this geometry in sync with public/favicon.svg.
+ * The canonical Pagecairn mark: three deliberately placed page markers.
+ * Keep this geometry in sync with public/favicon.svg.
  */
 export function BrandMark({ label, ...props }: BrandMarkProps) {
   return (
@@ -20,9 +20,7 @@ export function BrandMark({ label, ...props }: BrandMarkProps) {
       {...props}
     >
       <rect width="24" height="24" rx="5" fill="#ff6b00" />
-      <path d="M6.75 4.5h7.4l3.1 3.1v11.9H6.75z" fill="#fff" />
-      <path d="M14.15 4.5v3.1h3.1" fill="#ffd2b3" />
-      <path d="M14.7 11.05a4.05 4.05 0 1 0 0 5.9" fill="none" stroke="#ff6b00" strokeWidth="1.75" strokeLinecap="round" />
+      <path d="M8.25 6.25h7.5v2.5h-7.5zM6.75 10.75h10.5v2.5H6.75zM5.25 15.25h13.5v2.5H5.25z" fill="#fff" />
     </svg>
   );
 }
@@ -31,7 +29,7 @@ export function BrandLockup() {
   return (
     <div className="brand-lockup">
       <BrandMark className="brand-mark" />
-      <span>Conf Simple</span>
+      <span>Pagecairn</span>
     </div>
   );
 }

@@ -24,7 +24,7 @@ const vite = isProduction
 if (vite) app.use(vite.middlewares);
 
 const server = app.listen(port, () => {
-  console.log(`Conf Simple listening on http://0.0.0.0:${port}`);
+  console.log(`Pagecairn listening on http://0.0.0.0:${port}`);
   console.log(`Persistent data: ${dataDirectory}`);
 });
 

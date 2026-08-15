@@ -2,25 +2,25 @@
 
 ## Status
 
-Overall status: `DONE`
+Overall status: `IN_PROGRESS`
 
 Use only `TODO`, `IN_PROGRESS`, `DONE`, or `BLOCKED` for workstream status. Complete workstreams in dependency order. The engineering MVP remains complete; reopen application code only for the security blocker, branding integration, landing-page implementation, and the permissions-copy correction listed here.
 
 ## Launch Goal
 
-Make Conf Simple a credible public MIT-licensed MVP that small software teams can understand, self-host safely, and evaluate through GitHub, a minimal product page, and Product Hunt.
+Make Pagecairn a credible public MIT-licensed MVP that small software teams can understand, self-host safely, and evaluate through GitHub, a minimal product page, and Product Hunt.
 
 ## 1. Product Naming & Positioning
 
-**Status:** `DONE`
+**Status:** `IN_PROGRESS`
 
-- [x] Confirm **Conf Simple** as the final public name. No obvious exact-name software/wiki conflict was found; formal trademark clearance remains outside this launch workflow.
+- [x] Confirm **Pagecairn** as the final public name. Preliminary GitHub, npm, web, and domain checks found no obvious exact-name software/wiki conflict; formal trademark clearance remains outside this launch workflow.
 - [x] Finalize one consistent positioning set for all public surfaces:
-  - One-line description: “Conf Simple is a lightweight, self-hosted wiki for small software teams to write, organize, and find documentation.”
+  - One-line description: “Pagecairn is a lightweight, self-hosted wiki for small software teams to write, organize, and find documentation.”
   - GitHub description: “A lightweight self-hosted wiki for small software teams, built with Node.js, SQLite, and local file storage.”
   - Product Hunt tagline: “A lightweight, self-hosted wiki for small software teams”
   - Hero headline: “Open it. Write documentation. Find it later.”
-- [x] Use this final name and positioning consistently across the app, landing page, README, GitHub metadata, and Product Hunt assets.
+- [ ] Use this final name and positioning consistently across the app, landing page, README, GitHub metadata, and Product Hunt assets. Local surfaces are updated; the external repository slug and metadata remain pending.
 
 ## 2. Security & Trust Blocker
 
@@ -87,13 +87,13 @@ as SVG and reused by the application and public site.
 
 ## 8. GitHub Public Readiness
 
-**Status:** `DONE`
+**Status:** `IN_PROGRESS`
 
 - [x] Add the complete MIT `LICENSE` with the correct copyright holder and year.
 - [x] Re-audit tracked files and history for secrets, private data, local artifacts, broken links, and stale temporary material; no credentials, keys, runtime data, or private user content were found.
 - [x] Retain the agent configuration and completed implementation references as contributor context, while removing them from the final README's primary product path.
 - [x] Add a concise `SECURITY.md` with a private vulnerability-reporting path and lightweight contribution guidance appropriate for an initial release.
-- [x] Configure the final repository description, homepage, topics, and naming consistency; publish only after all launch gates pass. The canonical social-preview asset is public, while GitHub's UI-only repository-card upload is deferred below.
+- [ ] Configure the final repository description, homepage, topics, and naming consistency; publish only after all launch gates pass. The Pagecairn repository slug and metadata remain pending.
 - [x] Create and publish the `v0.1.0` release with installation notes, backup/update warning, and concise known limitations.
 - [x] Verify license detection, repository links, clone/quick-start commands, Pages deployment, and the public repository structure after changing visibility.
 
@@ -111,7 +111,7 @@ Start only after the name, identity, landing page, screenshots, positioning, and
 
 ## 10. Final Launch Review
 
-**Status:** `DONE`
+**Status:** `IN_PROGRESS`
 
 - [x] Run an independent Product Readiness Review against the actual final running product.
 - [x] Run an independent GitHub Readiness review against the final repository, metadata, license, release plan, and README.
@@ -150,6 +150,6 @@ Start only after the name, identity, landing page, screenshots, positioning, and
 - [x] Landing page implemented and validated
 - [x] Launch screenshots/assets ready
 - [x] Self-hosting/public documentation verified
-- [x] GitHub public readiness complete
+- [ ] GitHub public readiness complete after the external repository rename and metadata update
 - [x] Final README complete
 - [x] Independent Product Readiness Review = **READY TO LAUNCH**

@@ -627,7 +627,7 @@ describe("production SPA path handling", () => {
     const { database, dataDirectory } = testApp();
     const clientDirectory = path.join(dataDirectory, "client");
     fs.mkdirSync(clientDirectory);
-    fs.writeFileSync(path.join(clientDirectory, "index.html"), "<!doctype html><title>Conf Simple test client</title><div id=\"root\">client shell</div>");
+    fs.writeFileSync(path.join(clientDirectory, "index.html"), "<!doctype html><title>Pagecairn test client</title><div id=\"root\">client shell</div>");
     const app = createApp(database, { clientDirectory });
 
     const invite = await request(app).get("/invite/%E0%A4%A");

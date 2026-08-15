@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="public/favicon.svg" width="72" height="72" alt="Conf Simple logo">
-  <h1>Conf Simple</h1>
+  <img src="public/favicon.svg" width="72" height="72" alt="Pagecairn logo">
+  <h1>Pagecairn</h1>
   <p><strong>A lightweight, self-hosted wiki for small software teams.</strong></p>
   <p>
     <a href="https://bybogdan.github.io/conf-simple/">Product page</a>
@@ -11,9 +11,9 @@
   </p>
 </div>
 
-![Conf Simple showing a finished engineering handbook with nested pages](docs/assets/screenshots/hero-workspace.jpg)
+![Pagecairn showing a finished engineering handbook with nested pages](docs/assets/screenshots/hero-workspace.jpg)
 
-Conf Simple gives a small team one focused place to write, organize, and find
+Pagecairn gives a small team one focused place to write, organize, and find
 documentation without operating a workspace platform. It runs as one
 application container with SQLite and local uploads stored together in one
 persistent volume.
@@ -65,7 +65,7 @@ run `docker compose down -v` unless you intend to delete the installation data.
 
 | Search titles and content | Review saved revisions |
 | --- | --- |
-| ![Full-text documentation search in Conf Simple](docs/assets/screenshots/search.jpg) | ![Page revision history in Conf Simple](docs/assets/screenshots/history.jpg) |
+| ![Full-text documentation search in Pagecairn](docs/assets/screenshots/search.jpg) | ![Page revision history in Pagecairn](docs/assets/screenshots/history.jpg) |
 
 The initial release deliberately stays small: one workspace per installation,
 local accounts, manually shared invitation links, SQLite, local file storage,
@@ -93,4 +93,4 @@ suspected vulnerabilities privately according to [SECURITY.md](SECURITY.md).
 
 ## License
 
-Conf Simple is available under the [MIT License](LICENSE).
+Pagecairn is available under the [MIT License](LICENSE).
