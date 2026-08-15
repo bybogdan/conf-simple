@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import { AuthScreen } from "./components/AuthScreen";
+import { BrandMark } from "./components/BrandMark";
 import { InviteScreen } from "./components/InviteScreen";
 import { WorkspaceShell } from "./components/WorkspaceShell";
 import type { Bootstrap, Page, User, Workspace } from "./types";
@@ -26,7 +27,7 @@ export function App() {
     history.replaceState(null, "", "/"); setReady(next); setBootstrap({ needsSetup: false, requiresAuth: false });
   }} />;
   if (error) return <FatalError message={error} />;
-  if (!bootstrap) return <div className="loading-screen"><span className="mark">C</span></div>;
+  if (!bootstrap) return <div className="loading-screen" role="status" aria-label="Loading Conf Simple"><BrandMark className="brand-mark" /></div>;
   if (!ready) {
     return (
       <AuthScreen

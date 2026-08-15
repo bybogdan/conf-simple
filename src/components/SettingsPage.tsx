@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Check, HardDrive } from "lucide-react";
 import { api } from "../api";
 import type { Workspace } from "../types";
+import { BrandMark } from "./BrandMark";
 
 export function SettingsPage({ workspace, onWorkspaceChange }: { workspace: Workspace; onWorkspaceChange: (workspace: Workspace) => void }) {
   const [name, setName] = useState(workspace.name);
@@ -19,7 +20,7 @@ export function SettingsPage({ workspace, onWorkspaceChange }: { workspace: Work
       catch (caught) { setError((caught as Error).message); }
       finally { setSaving(false); }
     }}>
-      <div className="settings-section-heading"><span className="workspace-mark settings-mark">{workspace.name.charAt(0).toUpperCase()}</span><div><h2>Workspace profile</h2><p>The initial is used as the workspace icon for this version.</p></div></div>
+      <div className="settings-section-heading"><BrandMark className="brand-mark settings-mark" /><div><h2>Workspace profile</h2><p>The workspace name appears in the navigation sidebar.</p></div></div>
       <label className="settings-field"><span>Workspace name</span><input value={name} minLength={2} maxLength={80} disabled={!isAdmin} onChange={(event) => { setName(event.target.value); setSaved(false); }} /></label>
       {error && <p className="form-error" role="alert">{error}</p>}
       <div className="settings-actions">{saved && <span className="saved-note"><Check size={13} />Saved</span>}<button className="primary" disabled={!isAdmin || saving || name.trim() === workspace.name}>{saving ? "Saving…" : "Save changes"}</button></div>

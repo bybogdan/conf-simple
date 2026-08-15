@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import type { InvitationDetails, Page, User, Workspace } from "../types";
+import { BrandLockup, BrandMark } from "./BrandMark";
 
 type ReadyState = { user: User; workspace: Workspace; pages: Page[] };
 
@@ -19,12 +20,12 @@ export function InviteScreen({ token, onReady, onCancel }: { token: string; onRe
     }).catch((caught: Error) => setError(caught.message)).finally(() => setLoading(false));
   }, [token]);
 
-  if (loading) return <div className="loading-screen"><span className="mark">C</span></div>;
+  if (loading) return <div className="loading-screen" role="status" aria-label="Loading Conf Simple invitation"><BrandMark className="brand-mark" /></div>;
   if (!invitation) return <main className="fatal"><h1>Invitation unavailable</h1><p>{error}</p><button className="secondary" onClick={onCancel}>Go to sign in</button></main>;
 
   return <main className="auth-screen">
     <div className="auth-form-wrap">
-      <div className="brand-lockup"><span className="mark">C</span><span>Conf Simple</span></div>
+      <BrandLockup />
       <div className="auth-heading">
         <p className="eyebrow">Workspace invitation</p>
         <h1>Join {invitation.workspaceName}</h1>
