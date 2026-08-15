@@ -2,7 +2,7 @@
 
 ## Status
 
-Overall status: `TODO`
+Overall status: `BLOCKED`
 
 Use only `TODO`, `IN_PROGRESS`, `DONE`, or `BLOCKED` for workstream status. Complete workstreams in dependency order. The engineering MVP remains complete; reopen application code only for the security blocker, branding integration, landing-page implementation, and the permissions-copy correction listed here.
 
@@ -32,7 +32,12 @@ Make Conf Simple a credible public MIT-licensed MVP that small software teams ca
 
 ## 3. Visual Identity
 
-**Status:** `TODO`
+**Status:** `BLOCKED`
+
+The canonical Figma file exists, but Figma rejects all further MCP reads and
+writes because the connected Starter plan has reached its tool-call limit.
+Resume this workstream in the same file when quota is available; do not replace
+the Figma source of truth with an unreviewed off-canvas approximation.
 
 - [ ] After the public name is confirmed, use a Figma-capable design agent to create a simple canonical logo, wordmark, and square icon that replace the placeholder orange “C”.
 - [ ] Keep the identity restrained and compatible with the existing calm UI, typography, and orange accent; do not create a large brand system.
@@ -41,7 +46,7 @@ Make Conf Simple a credible public MIT-licensed MVP that small software teams ca
 
 ## 4. Application Branding Integration
 
-**Status:** `TODO`
+**Status:** `IN_PROGRESS`
 
 - [ ] Integrate the approved name, logo/wordmark, and icon into setup, login, invitation, workspace identity where appropriate, browser title, favicon, and basic page metadata.
 - [x] Add concise description and social metadata to the public HTML surface where applicable.
@@ -60,7 +65,7 @@ Make Conf Simple a credible public MIT-licensed MVP that small software teams ca
 
 ## 6. Launch Screenshots & Assets
 
-**Status:** `TODO`
+**Status:** `IN_PROGRESS`
 
 - [x] Prepare a clean synthetic demo workspace in the actual running application; include realistic technical documentation and no personal data, secrets, local paths, or unfinished states.
 - [x] Capture a hero screenshot showing a finished page and useful nested page tree.
@@ -83,7 +88,7 @@ Make Conf Simple a credible public MIT-licensed MVP that small software teams ca
 
 ## 8. GitHub Public Readiness
 
-**Status:** `TODO`
+**Status:** `IN_PROGRESS`
 
 - [x] Add the complete MIT `LICENSE` with the correct copyright holder and year.
 - [x] Re-audit tracked files and history for secrets, private data, local artifacts, broken links, and stale temporary material; no credentials, keys, runtime data, or private user content were found.
@@ -121,6 +126,7 @@ Start only after the name, identity, landing page, screenshots, positioning, and
 - [x] The repository contains a valid MIT license.
 - [x] Production HTTPS, reverse-proxy, and secure-cookie requirements are documented and verified.
 - [ ] An evaluatable public launch surface exists: canonical identity, minimal landing/product page, real screenshots, clear CTA, and social preview.
+- [ ] Figma MCP quota is available so the canonical identity and landing design can be created and validated in the launch file.
 
 ## Important Improvements
 
