@@ -1,83 +1,96 @@
-# Conf Simple
+<div align="center">
+  <img src="public/favicon.svg" width="72" height="72" alt="Conf Simple logo">
+  <h1>Conf Simple</h1>
+  <p><strong>A lightweight, self-hosted wiki for small software teams.</strong></p>
+  <p>
+    <a href="https://bybogdan.github.io/conf-simple/">Product page</a>
+    ·
+    <a href="docs/self-hosting.md">Self-hosting guide</a>
+    ·
+    <a href="CONTRIBUTING.md">Contributing</a>
+  </p>
+</div>
 
-A lightweight, self-hosted wiki for small software teams.
+![Conf Simple showing a finished engineering handbook with nested pages](docs/assets/screenshots/hero-workspace.jpg)
+
+Conf Simple gives a small team one focused place to write, organize, and find
+documentation without operating a workspace platform. It runs as one
+application container with SQLite and local uploads stored together in one
+persistent volume.
+
+## What it does
+
+- Create, edit, nest, move, and delete pages.
+- Write rich text, headings, lists, checklists, links, code, quotes, tables,
+  images, and file attachments.
+- Search page titles and content from anywhere in the workspace.
+- Review and restore saved page revisions.
+- Invite teammates with simple Admin and Member roles.
+- Keep the database and uploads together in storage you control.
 
 ## Quick start
 
+Requirements: Git and Docker with the Compose plugin.
+
 ```bash
+git clone https://github.com/bybogdan/conf-simple.git
+cd conf-simple
 docker compose up -d --build
 ```
 
-Open [http://localhost:3000](http://localhost:3000), create the first workspace and admin account, then start writing.
+Open [http://localhost:3000](http://localhost:3000), create the workspace and
+first admin account, then start writing.
 
-## What you can do
+Port 3000 is plain HTTP. Before exposing a production installation, configure
+TLS through a reverse proxy and enable secure session cookies. Follow the
+[production self-hosting guide](docs/self-hosting.md) for prerequisites,
+configuration, backup, restore, tagged updates, recovery, and troubleshooting.
 
-- Create, edit, nest, move, search, and restore pages.
-- Write rich text, lists, checklists, code, tables, links, and quotes.
-- Upload images and file attachments.
-- Invite teammates and manage Admin or Member roles.
+## One recoverable installation
 
-## Run locally for development
+The named Docker volume is mounted at `/data` and contains the complete backup
+unit:
 
-Requirements: Node.js 22 or newer.
+```text
+/data
+├── database.sqlite
+└── uploads/
+```
+
+Recreating the application container preserves this volume. Back up the entire
+directory while the application is stopped; never copy only the SQLite file or
+run `docker compose down -v` unless you intend to delete the installation data.
+
+## Product views
+
+| Search titles and content | Review saved revisions |
+| --- | --- |
+| ![Full-text documentation search in Conf Simple](docs/assets/screenshots/search.jpg) | ![Page revision history in Conf Simple](docs/assets/screenshots/history.jpg) |
+
+The initial release deliberately stays small: one workspace per installation,
+local accounts, manually shared invitation links, SQLite, local file storage,
+and no real-time multiplayer editing. See [AGENTS.md](AGENTS.md) for the product
+principles and explicit non-goals.
+
+## Development
+
+Use Node.js 22 or newer:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Local persistent data is stored in `./data`; set `APP_DATA_DIR` to use another directory.
-
-## Docker data and invitations
-
-The named Docker volume is mounted at `/data`, containing `database.sqlite`, SQLite WAL files, and uploads. Stop and recreate the application container without removing the volume to retain all data.
-
-The first person to open a fresh installation creates the workspace and initial admin account. Admins can then open **Members**, create a seven-day invitation link, and share it directly with a teammate. Conf Simple does not require an email provider. Treat invitation links like temporary passwords and share them through a trusted channel.
-
-For production TLS, configuration, repeatable backup and restore, tagged
-updates, recovery, and troubleshooting, see the
-[self-hosting guide](docs/self-hosting.md). Port 3000 is plain HTTP; do not
-expose it directly to the internet.
-
-## Back up and restore
-
-The complete backup unit is the persistent data directory: keep
-`database.sqlite`, its WAL/SHM files when present, and `uploads/` together. Stop
-the application while taking or restoring a snapshot, use a new timestamped
-destination for every backup, and keep backups private.
-
-Follow the tested [backup and restore procedure](docs/self-hosting.md#back-up).
-Restoring replaces the target installation, so back it up first. Never copy
-only the SQLite file, restore while the application is running, or run
-`docker compose down -v` as part of backup, restore, or update work.
-
-## Update
-
-Back up first, check out an exact published release tag, rebuild and recreate
-only the application container, then verify health and logs. The named data
-volume is preserved and database migrations run automatically at startup.
-
-See [update and recovery](docs/self-hosting.md#update-and-recover) for the full
-procedure, including how to return to the previous version and restore the
-pre-update snapshot if necessary.
-
-## Verification
+Before submitting a change:
 
 ```bash
 npm test
 npm run build
 ```
 
-The health check endpoint is `GET /api/health`.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report
+suspected vulnerabilities privately according to [SECURITY.md](SECURITY.md).
 
-## Development with Codex
+## License
 
-Build the MVP:
-
-> Run the `build-mvp` skill and continue autonomously until the Final MVP Gate passes.
-
-Review a slice manually:
-
-> Run the `review-slice` skill for Slice N.
-
-Project instructions and references are defined in the repository root docs and `.agents/skills/`.
+Conf Simple is available under the [MIT License](LICENSE).

@@ -2,7 +2,7 @@
 
 ## Status
 
-Overall status: `BLOCKED`
+Overall status: `IN_PROGRESS`
 
 Use only `TODO`, `IN_PROGRESS`, `DONE`, or `BLOCKED` for workstream status. Complete workstreams in dependency order. The engineering MVP remains complete; reopen application code only for the security blocker, branding integration, landing-page implementation, and the permissions-copy correction listed here.
 
@@ -32,46 +32,45 @@ Make Conf Simple a credible public MIT-licensed MVP that small software teams ca
 
 ## 3. Visual Identity
 
-**Status:** `BLOCKED`
+**Status:** `DONE`
 
-The canonical Figma file exists, but Figma rejects all further MCP reads and
-writes because the connected Starter plan has reached its tool-call limit.
-Resume this workstream in the same file when quota is available; do not replace
-the Figma source of truth with an unreviewed off-canvas approximation.
+After Figma remained unavailable, the product owner explicitly approved a
+simpler code-native identity and landing workflow. The canonical mark is stored
+as SVG and reused by the application and public site.
 
-- [ ] After the public name is confirmed, use a Figma-capable design agent to create a simple canonical logo, wordmark, and square icon that replace the placeholder orange “C”.
-- [ ] Keep the identity restrained and compatible with the existing calm UI, typography, and orange accent; do not create a large brand system.
-- [ ] Define export variants sufficient for light backgrounds, favicon/app icon use, README/landing use, GitHub social preview, and Product Hunt assets.
-- [ ] Store canonical source/export references so every public surface reuses the same identity.
+- [x] Create a simple canonical logo, wordmark, and square icon that replace the placeholder orange “C”.
+- [x] Keep the identity restrained and compatible with the existing calm UI, typography, and orange accent; do not create a large brand system.
+- [x] Define variants sufficient for light backgrounds, favicon/app icon use, README/landing use, GitHub social preview, and Product Hunt assets.
+- [x] Store canonical source/export references so every public surface reuses the same identity.
 
 ## 4. Application Branding Integration
 
-**Status:** `IN_PROGRESS`
+**Status:** `DONE`
 
-- [ ] Integrate the approved name, logo/wordmark, and icon into setup, login, invitation, workspace identity where appropriate, browser title, favicon, and basic page metadata.
+- [x] Integrate the approved name, logo/wordmark, and icon into setup, login, invitation, workspace identity where appropriate, browser title, favicon, and basic page metadata.
 - [x] Add concise description and social metadata to the public HTML surface where applicable.
 - [x] Correct the Members-page statement that Members can delete pages; deletion is admin-only.
-- [ ] Validate branding and naming consistency without redesigning the application shell or editor.
+- [x] Validate branding and naming consistency without redesigning the application shell or editor.
 
 ## 5. Landing Page
 
-**Status:** `TODO`
+**Status:** `DONE`
 
-- [ ] Use a Figma-capable design agent to design a minimal public landing page after naming and identity are final.
-- [ ] Include only: product name/logo, strong headline, short explanation, main product screenshot, 3–5 concise capabilities, GitHub/self-host CTA, supporting screenshots or product states, and a simple footer.
-- [ ] Do not include testimonials, customer logos, usage claims, pricing, cloud plans, or unsupported features.
-- [ ] Implement the accepted Figma design as a separate repository task, reusing the application’s typography, orange accent, and canonical identity.
-- [ ] Validate responsive layout, CTA targets, metadata, accessibility basics, production build, and a clean public first impression.
+- [x] Design and implement a minimal code-native public landing page after naming and identity are final, following the product owner's approved simplified workflow.
+- [x] Include only: product name/logo, strong headline, short explanation, main product screenshot, 3–5 concise capabilities, GitHub/self-host CTA, supporting screenshots or product states, and a simple footer.
+- [x] Do not include testimonials, customer logos, usage claims, pricing, cloud plans, or unsupported features.
+- [x] Reuse the application’s typography, orange accent, canonical identity, and real product screenshots.
+- [x] Validate responsive layout, CTA targets, metadata, accessibility basics, production build, and a clean public first impression.
 
 ## 6. Launch Screenshots & Assets
 
-**Status:** `IN_PROGRESS`
+**Status:** `DONE`
 
 - [x] Prepare a clean synthetic demo workspace in the actual running application; include realistic technical documentation and no personal data, secrets, local paths, or unfinished states.
 - [x] Capture a hero screenshot showing a finished page and useful nested page tree.
 - [x] Capture 3–5 representative states: rich technical editing with media/attachment, content search, revision history, nested organization, and member invitation.
-- [ ] Compose/export a GitHub social-preview image using the canonical identity and strongest product state.
-- [ ] Prepare Product Hunt gallery images from the same screenshots and identity.
+- [x] Compose/export a GitHub social-preview image using the canonical identity and strongest product state.
+- [x] Prepare Product Hunt gallery images from the same screenshots and identity.
 - [x] Record a concise 60–90 second demo/GIF/video showing setup, runbook creation, nesting, search, history, and invitation; keep this lightweight and factual.
 
 ## 7. Self-Hosting / Public Documentation
@@ -100,15 +99,15 @@ the Figma source of truth with an unreviewed off-canvas approximation.
 
 ## 9. README — FINAL STEP
 
-**Status:** `TODO`
+**Status:** `DONE`
 
 Start only after the name, identity, landing page, screenshots, positioning, and self-hosting documentation are stable.
 
-- [ ] Rewrite the README as a concise public repository landing page using the final canonical assets.
-- [ ] Include product name/logo, one-line description, hero screenshot, concise value proposition, key capabilities, quick start, persistence and self-hosting basics, selected screenshots, focused product philosophy/scope, and MIT license link.
-- [ ] Link to the landing page, production/self-hosting guidance, security reporting, and contribution guidance.
-- [ ] Remove or relocate prominent internal orchestration instructions that distract from evaluating and running the product.
-- [ ] Validate every command and link from a clean checkout and confirm the README does not claim unavailable distribution paths or features.
+- [x] Rewrite the README as a concise public repository landing page using the final canonical assets.
+- [x] Include product name/logo, one-line description, hero screenshot, concise value proposition, key capabilities, quick start, persistence and self-hosting basics, selected screenshots, focused product philosophy/scope, and MIT license link.
+- [x] Link to the landing page, production/self-hosting guidance, security reporting, and contribution guidance.
+- [x] Remove or relocate prominent internal orchestration instructions that distract from evaluating and running the product.
+- [x] Validate every command and link from a clean checkout and confirm the README does not claim unavailable distribution paths or features.
 
 ## 10. Final Launch Review
 
@@ -125,15 +124,15 @@ Start only after the name, identity, landing page, screenshots, positioning, and
 - [x] Authentication responses do not expose `passwordHash` or any other password verifier/secret.
 - [x] The repository contains a valid MIT license.
 - [x] Production HTTPS, reverse-proxy, and secure-cookie requirements are documented and verified.
-- [ ] An evaluatable public launch surface exists: canonical identity, minimal landing/product page, real screenshots, clear CTA, and social preview.
-- [ ] Figma MCP quota is available so the canonical identity and landing design can be created and validated in the launch file.
+- [x] An evaluatable public launch surface exists: canonical identity, minimal landing/product page, real screenshots, clear CTA, and social preview.
+- [x] The product owner approved the code-native identity and landing page as the canonical launch source after Figma remained unavailable.
 
 ## Important Improvements
 
 - [x] Correct Member deletion permissions copy.
 - [x] Make update, backup, and troubleshooting instructions operationally repeatable.
 - [x] Curate public repository/process documentation and add lightweight security/contribution guidance.
-- [ ] Prepare coherent Product Hunt gallery assets and a short factual demo.
+- [x] Prepare coherent Product Hunt gallery assets and a short factual demo.
 
 ## Post-Launch Opportunities
 
@@ -144,12 +143,12 @@ Start only after the name, identity, landing page, screenshots, positioning, and
 
 - [ ] All launch blockers `DONE`
 - [x] Product name finalized
-- [ ] Logo / identity finalized in Figma
-- [ ] App branding integrated
-- [ ] Landing page designed in Figma
-- [ ] Landing page implemented and validated
-- [ ] Launch screenshots/assets ready
+- [x] Logo / identity finalized in the approved code-native source
+- [x] App branding integrated
+- [x] Landing page designed and implemented in the approved code-native workflow
+- [x] Landing page implemented and validated
+- [x] Launch screenshots/assets ready
 - [x] Self-hosting/public documentation verified
 - [ ] GitHub public readiness complete
-- [ ] Final README complete
+- [x] Final README complete
 - [ ] Independent Product Readiness Review = **READY TO LAUNCH**
