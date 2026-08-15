@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 function testApp(directory?: string) {
-  const dataDirectory = directory ?? fs.mkdtempSync(path.join(os.tmpdir(), "conf-simple-"));
+  const dataDirectory = directory ?? fs.mkdtempSync(path.join(os.tmpdir(), "pagecairn-"));
   const database = openDatabase(dataDirectory);
   cleanup.push({ directory: dataDirectory, database });
   return { app: createApp(database), dataDirectory, database };
@@ -417,7 +417,7 @@ describe("local files and media", () => {
     const first = testApp();
     const agent = await setupAgent(first.app);
     const page = (await agent.post("/api/pages").send({ title: "Runbook" })).body;
-    const pdf = Buffer.from("%PDF-1.7\nconf simple test");
+    const pdf = Buffer.from("%PDF-1.7\npagecairn test");
     const uploaded = await agent.post(`/api/pages/${page.id}/uploads`)
       .set("Content-Type", "application/pdf")
       .set("X-File-Name", encodeURIComponent("runbook.pdf"))

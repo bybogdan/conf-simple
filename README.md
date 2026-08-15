@@ -3,7 +3,7 @@
   <h1>Pagecairn</h1>
   <p><strong>A lightweight, self-hosted wiki for small software teams.</strong></p>
   <p>
-    <a href="https://bybogdan.github.io/conf-simple/">Product page</a>
+    <a href="https://bybogdan.github.io/pagecairn/">Product page</a>
     ·
     <a href="docs/self-hosting.md">Self-hosting guide</a>
     ·
@@ -33,8 +33,8 @@ persistent volume.
 Requirements: Git and Docker with the Compose plugin.
 
 ```bash
-git clone https://github.com/bybogdan/conf-simple.git
-cd conf-simple
+git clone https://github.com/bybogdan/pagecairn.git
+cd pagecairn
 docker compose up -d --build
 ```
 
