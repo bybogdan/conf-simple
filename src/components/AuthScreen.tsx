@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { ArrowRight } from "lucide-react";
 import { api } from "../api";
 import type { Page, User, Workspace } from "../types";
+import { BrandLockup } from "./BrandMark";
 
 type Props = {
   mode: "setup" | "login";
@@ -36,7 +37,7 @@ export function AuthScreen({ mode, onReady }: Props) {
   return (
     <main className="auth-screen">
       <section className="auth-form-wrap">
-        <div className="brand-lockup"><span className="mark">C</span><span>Conf Simple</span></div>
+        <BrandLockup />
         <div className="auth-heading">
           <p className="eyebrow">{mode === "setup" ? "First-run setup" : "Welcome back"}</p>
           <h1>{mode === "setup" ? "Create your workspace" : "Sign in to your workspace"}</h1>

@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ff6b00">
+    <meta name="description" content="Conf Simple is a lightweight, self-hosted wiki for small software teams to write, organize, and find documentation.">
+    <meta property="og:title" content="Conf Simple — a lightweight, self-hosted wiki">
+    <meta property="og:description" content="Write, organize, and find your team's documentation while keeping the whole installation on your own server.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://bybogdan.github.io/conf-simple/">
+    <meta property="og:image" content="https://bybogdan.github.io/conf-simple/assets/launch/social-preview.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Conf Simple — a lightweight, self-hosted wiki">
+    <meta name="twitter:description" content="Write, organize, and find your team's documentation while keeping the whole installation on your own server.">
+    <meta name="twitter:image" content="https://bybogdan.github.io/conf-simple/assets/launch/social-preview.png">
+    <title>Conf Simple — A lightweight, self-hosted wiki</title>
+    <link rel="canonical" href="https://bybogdan.github.io/conf-simple/">
+    <link rel="icon" href="assets/landing/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="assets/landing/site.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="#top" aria-label="Conf Simple home">
+          <svg class="brand-mark" viewBox="0 0 24 24" role="img" aria-label="Conf Simple logo">
+            <rect width="24" height="24" rx="5" fill="#ff6b00"/>
+            <path d="M6.75 4.5h7.4l3.1 3.1v11.9H6.75z" fill="#fff"/>
+            <path d="M14.15 4.5v3.1h3.1" fill="#ffd2b3"/>
+            <path d="M14.7 11.05a4.05 4.05 0 1 0 0 5.9" fill="none" stroke="#ff6b00" stroke-width="1.75" stroke-linecap="round"/>
+          </svg>
+          <span>Conf Simple</span>
+        </a>
+        <nav aria-label="Primary navigation">
+          <a class="nav-link" href="https://github.com/bybogdan/conf-simple">View on GitHub</a>
+          <a class="button button-small" href="https://github.com/bybogdan/conf-simple/blob/main/docs/self-hosting.md">Self-host with Docker</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top" aria-labelledby="hero-title">
+        <div class="container hero-copy">
+          <p class="eyebrow">A lightweight, self-hosted wiki</p>
+          <h1 id="hero-title">Open it. Write documentation. Find it later.</h1>
+          <p class="hero-summary">Create nested pages, write rich technical documentation, search everything, and keep revisions, uploads, and data on your own server.</p>
+          <div class="hero-actions">
+            <a class="button" href="https://github.com/bybogdan/conf-simple/blob/main/docs/self-hosting.md">Self-host with Docker</a>
+            <a class="button button-secondary" href="https://github.com/bybogdan/conf-simple">View on GitHub <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <div class="container">
+          <figure class="hero-product">
+            <img src="assets/screenshots/hero-workspace.jpg" width="1280" height="720" alt="Conf Simple showing a production deployment runbook inside a nested engineering handbook" fetchpriority="high">
+          </figure>
+        </div>
+      </section>
+
+      <section class="section capabilities" aria-labelledby="capabilities-title">
+        <div class="container">
+          <div class="section-heading">
+            <p class="eyebrow">The documentation essentials</p>
+            <h2 id="capabilities-title">Everything a small team needs to keep useful knowledge close.</h2>
+          </div>
+          <div class="capability-grid">
+            <article>
+              <span class="capability-number" aria-hidden="true">01</span>
+              <h3>Write comfortably</h3>
+              <p>Rich text, code blocks, tables, checklists, images, and attachments.</p>
+            </article>
+            <article>
+              <span class="capability-number" aria-hidden="true">02</span>
+              <h3>Keep pages organized</h3>
+              <p>A simple nested tree for team documentation.</p>
+            </article>
+            <article>
+              <span class="capability-number" aria-hidden="true">03</span>
+              <h3>Find answers quickly</h3>
+              <p>Search page titles and content from anywhere.</p>
+            </article>
+            <article>
+              <span class="capability-number" aria-hidden="true">04</span>
+              <h3>Own the installation</h3>
+              <p>SQLite and local uploads in one persistent volume.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section product-states" aria-labelledby="states-title">
+        <div class="container">
+          <div class="section-heading">
+            <p class="eyebrow">Knowledge that stays useful</p>
+            <h2 id="states-title">Find the answer, then see how it changed.</h2>
+          </div>
+          <div class="state-grid">
+            <figure>
+              <div class="screenshot-frame">
+                <img src="assets/screenshots/search.jpg" width="1280" height="720" loading="lazy" alt="Conf Simple search results for deployment documentation">
+              </div>
+              <figcaption>
+                <strong>Find the answer from anywhere</strong>
+                <span>Search titles and page content without leaving your workspace.</span>
+              </figcaption>
+            </figure>
+            <figure>
+              <div class="screenshot-frame">
+                <img src="assets/screenshots/history.jpg" width="1280" height="720" loading="lazy" alt="Conf Simple revision history showing saved versions of a page">
+              </div>
+              <figcaption>
+                <strong>Review and restore saved revisions</strong>
+                <span>Keep the useful context when documentation changes.</span>
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="self-host" aria-labelledby="self-host-title">
+        <div class="container self-host-inner">
+          <div>
+            <p class="eyebrow">Boring infrastructure, by design</p>
+            <h2 id="self-host-title">One container. One persistent volume.</h2>
+            <p>Conf Simple runs with Node.js, SQLite, and local file storage. No Redis, PostgreSQL, object storage, or email service is required.</p>
+          </div>
+          <div class="install-panel">
+            <div class="terminal-label" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </div>
+            <pre><code>docker compose up -d --build</code></pre>
+            <a href="https://github.com/bybogdan/conf-simple/blob/main/docs/self-hosting.md">Read the self-hosting guide <span aria-hidden="true">→</span></a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <div>
+          <a class="brand" href="#top" aria-label="Conf Simple home">
+            <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+              <rect width="24" height="24" rx="5" fill="#ff6b00"/>
+              <path d="M6.75 4.5h7.4l3.1 3.1v11.9H6.75z" fill="#fff"/>
+              <path d="M14.15 4.5v3.1h3.1" fill="#ffd2b3"/>
+              <path d="M14.7 11.05a4.05 4.05 0 1 0 0 5.9" fill="none" stroke="#ff6b00" stroke-width="1.75" stroke-linecap="round"/>
+            </svg>
+            <span>Conf Simple</span>
+          </a>
+          <p>A lightweight, self-hosted wiki for small software teams.</p>
+        </div>
+        <nav aria-label="Footer navigation">
+          <a href="https://github.com/bybogdan/conf-simple">GitHub</a>
+          <a href="https://github.com/bybogdan/conf-simple/blob/main/docs/self-hosting.md">Self-hosting</a>
+          <a href="https://github.com/bybogdan/conf-simple/blob/main/SECURITY.md">Security</a>
+          <a href="https://github.com/bybogdan/conf-simple/blob/main/CONTRIBUTING.md">Contributing</a>
+        </nav>
+        <p class="license">MIT licensed.</p>
+      </div>
+    </footer>
+  </body>
+</html>

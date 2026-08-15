@@ -44,7 +44,74 @@ async function acceptInvite(app: ReturnType<typeof createApp>, admin: ReturnType
   return { agent, member: accepted.body.user, invitation: invited.body };
 }
 
+function expectNoPasswordVerifier(payload: unknown, storedVerifier: string) {
+  const serialized = JSON.stringify(payload);
+  expect(serialized).not.toContain("passwordHash");
+  expect(serialized).not.toContain("password_hash");
+  expect(serialized).not.toContain(storedVerifier);
+  expect(serialized).not.toContain("scrypt:");
+}
+
 describe("first-run persistence slice", () => {
+  it("never exposes password verifiers in authentication response bodies", async () => {
+    const { app, database } = testApp();
+    const admin = request.agent(app);
+    const setup = await admin.post("/api/setup").send({
+      workspaceName: "Acme Engineering",
+      displayName: "Jane Chen",
+      email: "jane@example.com",
+      password: "a very safe password",
+    });
+    expect(setup.status).toBe(201);
+
+    const storedAdmin = database.prepare("SELECT password_hash AS passwordHash FROM users WHERE email = ?")
+      .get("jane@example.com") as { passwordHash: string };
+    expect(setup.body.user).toEqual(expect.objectContaining({
+      id: expect.any(String), email: "jane@example.com", displayName: "Jane Chen",
+    }));
+    expect(Object.keys(setup.body.user).sort()).toEqual(["displayName", "email", "id"]);
+    expectNoPasswordVerifier(setup.body, storedAdmin.passwordHash);
+
+    const loginAgent = request.agent(app);
+    const login = await loginAgent.post("/api/login").send({
+      email: "jane@example.com",
+      password: "a very safe password",
+    });
+    expect(login.status).toBe(200);
+    expect(Object.keys(login.body.user).sort()).toEqual(["displayName", "email", "id"]);
+    expectNoPasswordVerifier(login.body, storedAdmin.passwordHash);
+
+    const bootstrap = await loginAgent.get("/api/bootstrap");
+    expect(bootstrap.status).toBe(200);
+    expect(Object.keys(bootstrap.body.user).sort()).toEqual(["displayName", "email", "id"]);
+    expectNoPasswordVerifier(bootstrap.body, storedAdmin.passwordHash);
+
+    const invitation = await admin.post("/api/invitations").send({ email: "dev@example.com", role: "member" });
+    expect(invitation.status).toBe(201);
+    expectNoPasswordVerifier(invitation.body, storedAdmin.passwordHash);
+
+    const invitationDetails = await request(app).get(`/api/invitations/${invitation.body.token}`);
+    expect(invitationDetails.status).toBe(200);
+    expectNoPasswordVerifier(invitationDetails.body, storedAdmin.passwordHash);
+
+    const member = request.agent(app);
+    const accepted = await member.post("/api/invitations/accept").send({
+      token: invitation.body.token,
+      displayName: "Dev User",
+      password: "another safe password",
+    });
+    expect(accepted.status).toBe(201);
+    const storedMember = database.prepare("SELECT password_hash AS passwordHash FROM users WHERE email = ?")
+      .get("dev@example.com") as { passwordHash: string };
+    expect(Object.keys(accepted.body.user).sort()).toEqual(["displayName", "email", "id"]);
+    expectNoPasswordVerifier(accepted.body, storedMember.passwordHash);
+    expectNoPasswordVerifier(accepted.body, storedAdmin.passwordHash);
+
+    const memberBootstrap = await member.get("/api/bootstrap");
+    expect(memberBootstrap.status).toBe(200);
+    expectNoPasswordVerifier(memberBootstrap.body, storedMember.passwordHash);
+  });
+
   it("starts in setup and allows setup only once", async () => {
     const { app } = testApp();
     expect((await request(app).get("/api/bootstrap")).body).toEqual({ needsSetup: true });

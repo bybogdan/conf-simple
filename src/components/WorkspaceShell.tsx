@@ -3,6 +3,7 @@ import { ChevronRight, FilePlus2, FileText, LogOut, MoreHorizontal, Move, Plus, 
 import { api } from "../api";
 import { pagePath, sortedChildren } from "../pageTree";
 import type { Page, User, Workspace } from "../types";
+import { BrandMark } from "./BrandMark";
 import { HistoryPanel } from "./HistoryPanel";
 import { MembersPage } from "./MembersPage";
 import { MovePageDialog } from "./MovePageDialog";
@@ -65,7 +66,7 @@ export function WorkspaceShell({ user, workspace, pages, onPagesChange, onWorksp
 
   return <div className="workspace-shell" onClick={() => { setPageMenuId(null); setAccountOpen(false); }}>
     <aside className="sidebar">
-      <div className="workspace-name"><span className="workspace-mark">{workspace.name.charAt(0).toUpperCase()}</span><span>{workspace.name}</span></div>
+      <div className="workspace-name"><BrandMark className="brand-mark" /><span>{workspace.name}</span></div>
       <div className="sidebar-actions">
         <button onClick={() => setSearchOpen(true)}><Search size={14} /><span>Search…</span><kbd>⌘K</kbd></button>
         <button onClick={() => { setNewParentId(null); setMode("new"); }}><Plus size={14} /><span>New page</span></button>

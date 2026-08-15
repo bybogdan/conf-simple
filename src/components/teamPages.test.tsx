@@ -19,7 +19,9 @@ describe("team management UI permissions", () => {
     expect(adminMarkup).toContain("Invite with a link");
     expect(memberMarkup).not.toContain("Invite member");
     expect(memberMarkup).not.toContain("Invite with a link");
-    expect(memberMarkup).toContain("Only admins can manage members");
+    expect(memberMarkup).toContain("Members can create, edit, and move pages");
+    expect(memberMarkup).toContain("Only admins can delete pages, manage members, and change workspace settings");
+    expect(memberMarkup).not.toContain("Members can create, edit, move, and delete pages");
   });
 
   it("renders workspace settings as read-only for members", () => {
