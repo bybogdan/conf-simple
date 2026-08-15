@@ -5,6 +5,7 @@ import request from "supertest";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
 import { openDatabase, type AppDatabase } from "./database.js";
+import { FixedWindowRateLimiter } from "./rateLimit.js";
 import { LocalUploadStorage, MAX_UPLOAD_BYTES, validateUpload } from "./storage.js";
 
 const cleanup: Array<{ directory: string; database: AppDatabase }> = [];
@@ -117,9 +118,71 @@ describe("first-run persistence slice", () => {
     expect((await request(app).get("/api/bootstrap")).body).toEqual({ needsSetup: true });
     const agent = await setupAgent(app);
     expect((await agent.get("/api/bootstrap")).body.workspace.name).toBe("Acme Engineering");
-    expect((await request(app).post("/api/setup").send({
-      workspaceName: "Second", displayName: "Other Admin", email: "other@example.com", password: "another safe password",
-    })).status).toBe(409);
+    const repeated = await request(app).post("/api/setup").send({});
+    expect(repeated.status).toBe(409);
+    expect(repeated.body.error).toBe("Setup has already been completed");
+  });
+
+  it("throttles repeated password checks and recovers after the window", async () => {
+    let now = 1_000;
+    const { database } = testApp();
+    const app = createApp(database, {
+      authRateLimiter: new FixedWindowRateLimiter(2, 60_000, () => now),
+    });
+    await setupAgent(app);
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const rejected = await request(app).post("/api/login").send({
+        email: "jane@example.com", password: "wrong password",
+      });
+      expect(rejected.status).toBe(401);
+    }
+
+    const throttled = await request(app).post("/api/login").send({
+      email: "jane@example.com", password: "a very safe password",
+    });
+    expect(throttled.status).toBe(429);
+    expect(throttled.headers["retry-after"]).toBe("60");
+    expect(throttled.body.error).toMatch(/too many authentication attempts/i);
+
+    now += 60_000;
+    const recovered = await request(app).post("/api/login").send({
+      email: "jane@example.com", password: "a very safe password",
+    });
+    expect(recovered.status).toBe(200);
+  });
+
+  it("throttles repeated existing-account invitation password checks", async () => {
+    let now = 1_000;
+    const { database } = testApp();
+    const app = createApp(database, {
+      authRateLimiter: new FixedWindowRateLimiter(2, 60_000, () => now),
+    });
+    const admin = await setupAgent(app);
+    const first = await acceptInvite(app, admin, {
+      email: "returning@example.com", displayName: "Returning User", password: "returning safe password",
+    });
+    expect((await admin.delete(`/api/members/${first.member.id}`)).status).toBe(204);
+    const reinvite = await admin.post("/api/invitations").send({ email: "returning@example.com", role: "member" });
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const rejected = await request(app).post("/api/invitations/accept").send({
+        token: reinvite.body.token, displayName: "Returning User", password: "wrong password",
+      });
+      expect(rejected.status).toBe(401);
+    }
+
+    const throttled = await request(app).post("/api/invitations/accept").send({
+      token: reinvite.body.token, displayName: "Returning User", password: "returning safe password",
+    });
+    expect(throttled.status).toBe(429);
+    expect(throttled.headers["retry-after"]).toBe("60");
+
+    now += 60_000;
+    const recovered = await request(app).post("/api/invitations/accept").send({
+      token: reinvite.body.token, displayName: "Returning User", password: "returning safe password",
+    });
+    expect(recovered.status).toBe(201);
   });
 
   it("creates and updates a page with optimistic conflict protection", async () => {

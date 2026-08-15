@@ -212,6 +212,14 @@ Confirm that the browser uses the public HTTPS URL, `SECURE_COOKIES` is exactly
 accepts the session cookie. A secure cookie is intentionally not returned over
 plain HTTP. Check the browser network panel and both proxy and application logs.
 
+### Login returns `429 Too Many Requests`
+
+Conf Simple limits repeated password checks to protect the single application
+process from brute-force and resource-exhaustion attempts. Stop retrying and
+wait for the number of seconds in the response's `Retry-After` header. A
+successful authentication clears the limiter for that account or invitation.
+The default window is five minutes and is stored only in the running process.
+
 ### Getting help
 
 Search the repository's existing issues before opening a new one. Include the
