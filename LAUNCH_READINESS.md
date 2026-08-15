@@ -67,7 +67,7 @@ Make Conf Simple a credible public MIT-licensed MVP that small software teams ca
 - [x] Capture 3–5 representative states: rich technical editing with media/attachment, content search, revision history, nested organization, and member invitation.
 - [ ] Compose/export a GitHub social-preview image using the canonical identity and strongest product state.
 - [ ] Prepare Product Hunt gallery images from the same screenshots and identity.
-- [ ] Record a concise 60–90 second demo/GIF/video showing setup, runbook creation, nesting, search, history, and invitation; keep this lightweight and factual.
+- [x] Record a concise 60–90 second demo/GIF/video showing setup, runbook creation, nesting, search, history, and invitation; keep this lightweight and factual.
 
 ## 7. Self-Hosting / Public Documentation
 

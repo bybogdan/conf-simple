@@ -88,3 +88,11 @@ than waiting through builds or typing every line.
 - Do not imply hosted cloud availability, email delivery, real-time editing, a
   prebuilt container image, customer adoption, or performance metrics.
 - End on the repository/self-host CTA; do not add a pricing CTA.
+
+## Lightweight preview
+
+`docs/assets/launch/conf-simple-demo.gif` is a 64-second, seven-frame product
+preview assembled from the real 1280×720 captures. It covers first-run setup,
+nested organization, rich editing, media and files, search, history, and member
+invitation. Use the narrated storyboard above when a full-motion recording is
+preferred for the launch listing.
