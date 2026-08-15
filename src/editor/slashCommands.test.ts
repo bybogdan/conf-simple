@@ -21,5 +21,8 @@ describe("slash command matching", () => {
     expect(filterSlashCommands("ordered").map((command) => command.label)).toEqual(["Numbered list"]);
     expect(filterSlashCommands("photo").map((command) => command.label)).toEqual(["Image"]);
     expect(filterSlashCommands("attachment").map((command) => command.label)).toEqual(["File"]);
+    expect(filterSlashCommands("url").map((command) => command.label)).toEqual(["Link"]);
+    expect(filterSlashCommands("grid").map((command) => command.label)).toEqual(["Table"]);
+    expect(filterSlashCommands("monospace").map((command) => command.label)).toEqual(["Inline code"]);
   });
 });

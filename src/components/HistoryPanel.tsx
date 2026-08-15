@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import TaskItem from "@tiptap/extension-task-item";
-import TaskList from "@tiptap/extension-task-list";
 import { Clock3, RotateCcw, X } from "lucide-react";
 import { api } from "../api";
+import { createEditorExtensions } from "../editor/extensions";
 import type { Page, PageRevision } from "../types";
 import { useModalDialog } from "./useModalDialog";
 
@@ -15,7 +13,7 @@ export function HistoryPanel({ page, onClose, onRestored }: { page: Page; onClos
   const [error, setError] = useState("");
   const dialogRef = useModalDialog(onClose);
   const selected = revisions.find((revision) => revision.id === selectedId) ?? revisions[0];
-  const editor = useEditor({ extensions: [StarterKit, TaskList, TaskItem.configure({ nested: true })], editable: false, content: selected?.content, immediatelyRender: false });
+  const editor = useEditor({ extensions: createEditorExtensions(), editable: false, content: selected?.content, immediatelyRender: false });
   useEffect(() => { api.revisions(page.id).then((items) => { setRevisions(items); setSelectedId(items[0]?.id ?? null); }).catch((caught: Error) => setError(caught.message)); }, [page.id]);
   useEffect(() => { if (selected) editor?.commands.setContent(selected.content); }, [selected?.id, editor]);
   return <div className="overlay" onMouseDown={onClose}>

@@ -178,7 +178,9 @@ QA result: **PASS** at `6320226`; 32/32 tests, production build/image, migration
 
 # Final MVP Gate
 
-**Status:** `TODO`
+**Status:** `DONE`
+
+QA result: **PASS** at `7129117`; 39/39 tests, TypeScript and production build, dependency audit, Compose validation, Docker image build, editor schema/security regression coverage, and independent release review passed. Docker persistence, backup/restore, browser flows, and clean production logs remain covered by the passed Slice 4 gate because the final delta did not change deployment or storage topology.
 
 Run only after all slices are `DONE`.
 
@@ -315,8 +317,4 @@ Routine implementation choices should be made independently.
 
 # Current Next Action
 
-The next implementation target is:
-
-> **Final MVP Gate**
-
-Run the complete integrated product gate against validated `main` after Slice 4 merges.
+All planned MVP slices and the integrated Final MVP Gate are complete.
