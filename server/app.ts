@@ -15,6 +15,7 @@ import {
   savePage,
   searchPages,
 } from "./pageService.js";
+import { FixedWindowRateLimiter, type RateLimitDecision } from "./rateLimit.js";
 import { contentDispositionFilename, LocalUploadStorage, MAX_UPLOAD_BYTES, UploadError, validateUpload } from "./storage.js";
 
 const setupSchema = z.object({
@@ -52,13 +53,21 @@ const acceptInvitationSchema = z.object({
 const memberRoleSchema = z.object({ role: z.enum(["admin", "member"]) });
 
 const INVITATION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
+const AUTH_RATE_LIMIT_ATTEMPTS = 10;
+const AUTH_RATE_LIMIT_WINDOW_MS = 1000 * 60 * 5;
 
 type SessionUser = NonNullable<ReturnType<typeof getSessionUser>>;
 type PublicUser = Pick<SessionUser, "id" | "email" | "displayName">;
 
-export function createApp(database: AppDatabase, options: { clientDirectory?: string; secureCookies?: boolean; dataDirectory?: string } = {}) {
+export function createApp(database: AppDatabase, options: {
+  clientDirectory?: string;
+  secureCookies?: boolean;
+  dataDirectory?: string;
+  authRateLimiter?: FixedWindowRateLimiter;
+} = {}) {
   const app = express();
   const uploadStorage = new LocalUploadStorage(options.dataDirectory ?? path.dirname(database.name));
+  const authRateLimiter = options.authRateLimiter ?? new FixedWindowRateLimiter(AUTH_RATE_LIMIT_ATTEMPTS, AUTH_RATE_LIMIT_WINDOW_MS);
   app.disable("x-powered-by");
   app.use(helmet({ contentSecurityPolicy: false }));
 
@@ -127,6 +136,10 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
       if (!invitation) return response.status(404).json({ error: "This invitation is invalid or has already been used" });
       if (invitation.expiresAt <= new Date().toISOString()) return response.status(410).json({ error: "This invitation has expired. Ask an admin for a new link." });
 
+      const rateLimitKey = `invitation:${hashInvitationToken(input.token)}`;
+      const rateLimit = authRateLimiter.consume(rateLimitKey);
+      if (!rateLimit.allowed) return sendRateLimit(response, rateLimit);
+
       const existing = database.prepare("SELECT id, password_hash AS passwordHash FROM users WHERE email = ?").get(invitation.email) as { id: string; passwordHash: string } | undefined;
       if (existing && !(await verifyPassword(input.password, existing.passwordHash))) {
         return response.status(401).json({ error: "Enter the password for your existing account" });
@@ -144,6 +157,7 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
         database.prepare("DELETE FROM workspace_invitations WHERE token_hash = ?").run(hashInvitationToken(input.token));
       })();
       const acceptedUser = database.prepare("SELECT id, email, display_name AS displayName FROM users WHERE id = ?").get(userId) as SessionUser;
+      authRateLimiter.reset(rateLimitKey);
       setSessionCookie(response, createSession(database, userId), options.secureCookies);
       return response.status(201).json(workspacePayload(database, acceptedUser));
     } catch (error) {
@@ -153,7 +167,11 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
 
   app.post("/api/setup", async (request, response, next) => {
     try {
+      const setupComplete = Number((database.prepare("SELECT COUNT(*) AS count FROM users").get() as { count: number }).count) > 0;
+      if (setupComplete) throw new SetupCompleteError();
       const input = setupSchema.parse(request.body);
+      const rateLimit = authRateLimiter.consume("setup");
+      if (!rateLimit.allowed) return sendRateLimit(response, rateLimit);
       const passwordHash = await hashPassword(input.password);
       const now = new Date().toISOString();
       const userId = randomUUID();
@@ -169,6 +187,7 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
           .prepare("INSERT INTO workspace_members (workspace_id, user_id, role) VALUES (?, ?, 'admin')")
           .run(workspaceId, userId);
       })();
+      authRateLimiter.reset("setup");
       setSessionCookie(response, createSession(database, userId), options.secureCookies);
       response.status(201).json(workspacePayload(database, { id: userId, email: input.email, displayName: input.displayName }));
     } catch (error) {
@@ -182,9 +201,14 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
       const user = database
         .prepare("SELECT id, email, display_name AS displayName, password_hash AS passwordHash FROM users WHERE email = ?")
         .get(input.email) as (SessionUser & { passwordHash: string }) | undefined;
-      if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
+      if (!user) return response.status(401).json({ error: "Email or password is incorrect" });
+      const rateLimitKey = `user:${user.id}`;
+      const rateLimit = authRateLimiter.consume(rateLimitKey);
+      if (!rateLimit.allowed) return sendRateLimit(response, rateLimit);
+      if (!(await verifyPassword(input.password, user.passwordHash))) {
         return response.status(401).json({ error: "Email or password is incorrect" });
       }
+      authRateLimiter.reset(rateLimitKey);
       if (!memberWorkspace(database, user.id)) return response.status(403).json({ error: "This account is not a workspace member" });
       setSessionCookie(response, createSession(database, user.id), options.secureCookies);
       return response.json(workspacePayload(database, user));
@@ -434,6 +458,11 @@ function sendError(error: unknown, request: Request, response: Response) {
   if (error instanceof PageHierarchyError) return response.status(error.status).json({ error: error.message });
   console.error(error);
   return response.status(500).json({ error: "Unexpected server error" });
+}
+
+function sendRateLimit(response: Response, decision: Extract<RateLimitDecision, { allowed: false }>) {
+  response.setHeader("Retry-After", String(decision.retryAfterSeconds));
+  return response.status(429).json({ error: "Too many authentication attempts. Try again later." });
 }
 
 function workspacePayload(database: AppDatabase, user: PublicUser) {
