@@ -15,7 +15,7 @@ Read this file together with:
 
 Primary repository:
 
-**Repository URL:** https://github.com/bybogdan/conf-simple
+**Repository URL:** https://github.com/bybogdan/pagecairn
 
 Use GitHub as the source of truth for:
 

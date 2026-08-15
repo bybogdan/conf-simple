@@ -21,8 +21,8 @@ the host platform.
 Clone the repository and build the application locally:
 
 ```bash
-git clone https://github.com/bybogdan/conf-simple.git
-cd conf-simple
+git clone https://github.com/bybogdan/pagecairn.git
+cd pagecairn
 docker compose up -d --build
 docker compose ps
 curl --fail http://127.0.0.1:3000/api/health
