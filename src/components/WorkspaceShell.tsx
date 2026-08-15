@@ -74,6 +74,7 @@ export function WorkspaceShell({ user, workspace, pages, onPagesChange, onWorksp
       <p className="sidebar-label">Pages</p>
       <nav className="page-tree" aria-label="Pages">
         <PageRows pages={pages} parentId={null} selectedId={selectedId} expanded={expanded} menuId={pageMenuId}
+          canDelete={workspace.role === "admin"}
           onSelect={selectPage} onToggle={(id) => setExpanded((current) => { const next = new Set(current); next.has(id) ? next.delete(id) : next.add(id); return next; })}
           onMenu={(id) => setPageMenuId((current) => current === id ? null : id)}
           onAddChild={(page) => { setNewParentId(page.id); setExpanded((current) => new Set(current).add(page.id)); setMode("new"); setPageMenuId(null); }}
@@ -102,12 +103,12 @@ export function WorkspaceShell({ user, workspace, pages, onPagesChange, onWorksp
 }
 
 type RowsProps = {
-  pages: Page[]; parentId: string | null; selectedId: string | null; expanded: Set<string>; menuId: string | null; depth?: number;
+  pages: Page[]; parentId: string | null; selectedId: string | null; expanded: Set<string>; menuId: string | null; canDelete: boolean; depth?: number;
   onSelect: (id: string) => void; onToggle: (id: string) => void; onMenu: (id: string) => void; onAddChild: (page: Page) => void;
   onMoveTarget: (page: Page) => void; onMove: (page: Page, parentId: string | null, position?: number) => Promise<void>; onDelete: (page: Page) => Promise<void>;
 };
 
-function PageRows(props: RowsProps): React.ReactNode {
+export function PageRows(props: RowsProps): React.ReactNode {
   const depth = props.depth ?? 0;
   const siblings = sortedChildren(props.pages, props.parentId);
   return siblings.map((page, index) => {
@@ -123,7 +124,7 @@ function PageRows(props: RowsProps): React.ReactNode {
           <button disabled={index === 0} onClick={() => void props.onMove(page, page.parentId, index - 1)}>Move up</button>
           <button disabled={index === siblings.length - 1} onClick={() => void props.onMove(page, page.parentId, index + 1)}>Move down</button>
           <button onClick={() => props.onMoveTarget(page)}><Move size={13} />Move to…</button>
-          <div className="menu-divider" /><button className="danger" onClick={() => void props.onDelete(page)}><Trash2 size={13} />Delete page</button>
+          {props.canDelete && <><div className="menu-divider" /><button className="danger" onClick={() => void props.onDelete(page)}><Trash2 size={13} />Delete page</button></>}
         </div>}
       </div>
       {open && children.length > 0 && <PageRows {...props} parentId={page.id} depth={depth + 1} />}

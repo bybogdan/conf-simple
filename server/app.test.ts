@@ -434,6 +434,12 @@ describe("workspace members and settings", () => {
       title: "Member-authored runbook", version: 1,
       content: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Team-owned docs" }] }] },
     })).status).toBe(200);
+
+    const blockedDelete = await member.delete(`/api/pages/${page.body.id}`);
+    expect(blockedDelete.status).toBe(403);
+    expect(blockedDelete.body.error).toBe("Admin access required");
+    expect((await member.get("/api/bootstrap")).body.pages.some((item: { id: string }) => item.id === page.body.id)).toBe(true);
+    expect((await admin.delete(`/api/pages/${page.body.id}`)).status).toBe(200);
   });
 
   it("changes roles, renames the workspace, and revokes removed member sessions", async () => {

@@ -323,8 +323,8 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
   }));
 
   app.delete("/api/pages/:id", requireUser(database, (request, response, user) => {
-    const workspace = memberWorkspace(database, user.id);
-    if (!workspace) return response.status(403).json({ error: "Workspace membership required" });
+    const workspace = adminWorkspace(database, user.id);
+    if (!workspace) return response.status(403).json({ error: "Admin access required" });
     const storedFiles = database.prepare(`
       WITH RECURSIVE subtree(id) AS (
         SELECT id FROM pages WHERE id = ? AND workspace_id = ?
