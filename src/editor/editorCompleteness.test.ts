@@ -1,6 +1,7 @@
 import { Editor } from "@tiptap/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createEditorExtensions } from "./extensions";
+import { safeAttachmentUrl } from "./fileAttachment";
 import { applyInlineCode, insertSafeLink, normalizeSafeLinkHref } from "./links";
 
 const editors: Editor[] = [];
@@ -59,6 +60,13 @@ describe("complete shared editor schema", () => {
     expect(JSON.stringify(preview.getJSON())).toContain("runbook.pdf");
     expect(JSON.stringify(preview.getJSON())).toContain("Ship it");
     expect(warning).not.toHaveBeenCalled();
+  });
+
+  it("only renders page-scoped upload URLs for legacy attachments", () => {
+    expect(safeAttachmentUrl("javascript:globalThis.__confPwned=1")).toBeNull();
+    expect(safeAttachmentUrl("https://example.com/file.txt")).toBeNull();
+    expect(safeAttachmentUrl("/api/uploads/4477bf41-1bd7-49a9-bce0-426236ab3b10"))
+      .toBe("/api/uploads/4477bf41-1bd7-49a9-bce0-426236ab3b10");
   });
 });
 

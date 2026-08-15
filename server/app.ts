@@ -279,6 +279,10 @@ export function createApp(database: AppDatabase, options: { clientDirectory?: st
     const workspace = memberWorkspace(database, user.id);
     if (!workspace) return response.status(403).json({ error: "Workspace membership required" });
     const content = input.content ?? emptyDocument();
+    // New pages cannot reference uploads yet because uploads are page-scoped and
+    // can only be created after the page exists. Apply the same invariant as PUT
+    // so crafted create requests cannot persist arbitrary media URLs.
+    validateMediaReferences(database, content, null, workspace.id);
     const id = createPage(database, {
       workspaceId: workspace.id,
       parentId: input.parentId ?? null,
@@ -506,7 +510,7 @@ function uploadPayload(upload: { id: string; pageId: string; originalName: strin
   return { ...upload, url: `/api/uploads/${upload.id}`, isImage: upload.mimeType.startsWith("image/") };
 }
 
-function validateMediaReferences(database: AppDatabase, content: Record<string, unknown>, pageId: string, workspaceId: string) {
+function validateMediaReferences(database: AppDatabase, content: Record<string, unknown>, pageId: string | null, workspaceId: string) {
   const references: Array<{ id: string; image: boolean }> = [];
   const visit = (value: unknown) => {
     if (!value || typeof value !== "object") return;
@@ -521,6 +525,8 @@ function validateMediaReferences(database: AppDatabase, content: Record<string, 
     if (Array.isArray(node.content)) node.content.forEach(visit);
   };
   visit(content);
+
+  if (!pageId && references.length) throw new UploadError("Invalid file reference");
 
   for (const reference of references) {
     const upload = database.prepare(`

@@ -234,6 +234,24 @@ describe("local files and media", () => {
     Buffer.from("test image payload"),
   ]);
 
+  it("rejects arbitrary media references during page creation", async () => {
+    const { app } = testApp();
+    const agent = await setupAgent(app);
+    const crafted = await agent.post("/api/pages").send({
+      title: "Crafted attachment",
+      content: {
+        type: "doc",
+        content: [{
+          type: "fileAttachment",
+          attrs: { url: "javascript:globalThis.__confPwned=1", name: "click-me.txt", size: 7 },
+        }],
+      },
+    });
+
+    expect(crafted.status).toBe(400);
+    expect(crafted.body.error).toBe("Invalid file reference");
+  });
+
   it("stores validated image bytes and metadata, then serves them only to authenticated members", async () => {
     const { app, dataDirectory, database } = testApp();
     const agent = await setupAgent(app);
