@@ -26,6 +26,7 @@ import { createEditorExtensions } from "../editor/extensions";
 import { filterSlashCommands, findSlashMatch, type SlashCommandId, type SlashMatch } from "../editor/slashCommands";
 import { applyInlineCode, insertSafeLink, normalizeSafeLinkHref } from "../editor/links";
 import { insertUploadedMedia } from "../editor/mediaInsertion";
+import { runEditorSave } from "../editor/saveLifecycle";
 import type { Page, RichDocument } from "../types";
 import { useModalDialog } from "./useModalDialog";
 
@@ -289,18 +290,19 @@ export function PageEditor({ page, editing, onEdit, onHistory, onCancel, onSaved
 
   async function save() {
     if (!title.trim()) return;
-    setSaving(true);
     setError("");
-    try {
-      await cleanupPendingUploads(true);
-      const currentContent = (editor?.getJSON() as RichDocument | undefined) ?? content;
-      const updated = await api.updatePage(page.id, { title: title.trim(), content: currentContent, version: page.version });
-      pendingUploadIdsRef.current.clear();
-      onSaved(updated);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not save page");
-      setSaving(false);
-    }
+    await runEditorSave({
+      setSaving,
+      onError: setError,
+      save: async () => {
+        await cleanupPendingUploads(true);
+        const currentContent = (editor?.getJSON() as RichDocument | undefined) ?? content;
+        const updated = await api.updatePage(page.id, { title: title.trim(), content: currentContent, version: page.version });
+        pendingUploadIdsRef.current.clear();
+        return updated;
+      },
+      onSaved,
+    });
   }
 
   async function discard() {
