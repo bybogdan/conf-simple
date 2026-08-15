@@ -2,7 +2,22 @@
 
 A lightweight, self-hosted wiki for small software teams.
 
-## Local development
+## Quick start
+
+```bash
+docker compose up -d --build
+```
+
+Open [http://localhost:3000](http://localhost:3000), create the first workspace and admin account, then start writing.
+
+## What you can do
+
+- Create, edit, nest, move, search, and restore pages.
+- Write rich text, lists, checklists, code, tables, links, and quotes.
+- Upload images and file attachments.
+- Invite teammates and manage Admin or Member roles.
+
+## Run locally for development
 
 Requirements: Node.js 22 or newer.
 
@@ -13,13 +28,9 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Local persistent data is stored in `./data`; set `APP_DATA_DIR` to use another directory.
 
-## Docker
+## Docker data and invitations
 
-```bash
-docker compose up -d --build
-```
-
-Open [http://localhost:3000](http://localhost:3000). The named Docker volume is mounted at `/data`, containing `database.sqlite` and its SQLite WAL files. Stop and recreate the application container without removing the volume to retain all data.
+The named Docker volume is mounted at `/data`, containing `database.sqlite`, SQLite WAL files, and uploads. Stop and recreate the application container without removing the volume to retain all data.
 
 The first person to open a fresh installation creates the workspace and initial admin account. Admins can then open **Members**, create a seven-day invitation link, and share it directly with a teammate. Conf Simple does not require an email provider. Treat invitation links like temporary passwords and share them through a trusted channel.
 
