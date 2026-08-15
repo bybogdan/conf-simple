@@ -54,6 +54,7 @@ const memberRoleSchema = z.object({ role: z.enum(["admin", "member"]) });
 const INVITATION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 
 type SessionUser = NonNullable<ReturnType<typeof getSessionUser>>;
+type PublicUser = Pick<SessionUser, "id" | "email" | "displayName">;
 
 export function createApp(database: AppDatabase, options: { clientDirectory?: string; secureCookies?: boolean; dataDirectory?: string } = {}) {
   const app = express();
@@ -435,7 +436,7 @@ function sendError(error: unknown, request: Request, response: Response) {
   return response.status(500).json({ error: "Unexpected server error" });
 }
 
-function workspacePayload(database: AppDatabase, user: SessionUser) {
+function workspacePayload(database: AppDatabase, user: PublicUser) {
   const workspace = memberWorkspace(database, user.id);
   if (!workspace) throw new Error("User has no workspace");
   const pages = database.prepare(`
@@ -445,7 +446,11 @@ function workspacePayload(database: AppDatabase, user: SessionUser) {
     FROM pages JOIN users ON users.id = pages.updated_by
     WHERE pages.workspace_id = ? ORDER BY pages.position, pages.created_at
   `).all(workspace.id).map((row) => deserializePage(row as Record<string, unknown>));
-  return { user, workspace, pages };
+  return { user: publicUserPayload(user), workspace, pages };
+}
+
+function publicUserPayload(user: PublicUser): PublicUser {
+  return { id: user.id, email: user.email, displayName: user.displayName };
 }
 
 function memberWorkspace(database: AppDatabase, userId: string) {
