@@ -32,20 +32,47 @@ Open `http://localhost:3000`. The first person to open a fresh installation
 creates the workspace and initial admin account.
 
 For a reproducible production install, check out a published release tag before
-building. Replace `v0.1.0` with the release you intend to run:
+building. Replace `v0.1.1` with the release you intend to run:
 
 ```bash
 git fetch --tags
-git checkout v0.1.0
+git checkout v0.1.1
 docker compose up -d --build
 ```
 
-The Compose stack stores all persistent state in the named volume
-`conf-simple-data`, mounted at `/data` in the container. The volume contains
+The Compose project is explicitly named `pagecairn`, so its generated image,
+container, and network names use the Pagecairn identity regardless of the local
+checkout directory. The stack stores all persistent state in the named volume
+`pagecairn-data`, mounted at `/data` in the container. Docker Compose prefixes
+the physical volume with the project name, so a standard clone normally shows
+it as `pagecairn_pagecairn-data`. The volume contains
 `database.sqlite`, its SQLite WAL/SHM files when present, and `uploads/`.
 Recreating the application container preserves this volume. Never run
 `docker compose down -v` unless you intentionally want to delete the
 installation's data.
+
+### Updating a pre-Pagecairn installation
+
+Version 0.1.1 completes the project rename, including the Compose project and
+volume key.
+If you previously ran version 0.1.0 before the Pagecairn rename, the old volume
+is not attached automatically under the new key. Before changing versions, use
+the [backup procedure](#back-up) from the old checkout to copy the complete
+`/data` directory to a fresh backup. That procedure restarts the old app, so
+stop it again before switching versions:
+
+```bash
+docker compose stop app
+git fetch --tags
+git checkout v0.1.1
+docker compose up -d --build
+```
+
+Then use the [restore procedure](#restore) to copy the backup into the new
+Pagecairn volume. Keep the old volume and backup until you have verified
+expected pages, attachments, members, and revision history in Pagecairn. Do
+not start the old and new Compose projects at the same time because both publish
+host port 3000 by default.
 
 ## Production HTTPS
 
@@ -154,7 +181,7 @@ health and logs:
 
 ```bash
 git fetch --tags
-git checkout v0.1.0
+git checkout v0.1.1
 docker compose build --pull
 docker compose up -d
 docker compose ps
@@ -162,7 +189,7 @@ curl --fail http://127.0.0.1:3000/api/health
 docker compose logs --tail=100 app
 ```
 
-Replace `v0.1.0` with the new published tag. Database migrations run
+Replace `v0.1.1` with the new published tag. Database migrations run
 automatically at startup. Do not remove the named volume during an update.
 
 If the new version does not become healthy, save its logs and stop it. Check out
