@@ -13,7 +13,7 @@ and find documentation. Create nested pages, write rich technical docs with
 code, tables, checklists, images, and files, search titles and content, restore
 earlier revisions, and invite teammates with simple Admin and Member roles.
 It runs as one application container with SQLite and local uploads in a
-persistent data volume. Version 0.1.0 is built from source with Docker and does
+persistent data volume. Version 0.1.1 is built from source with Docker and does
 not require Redis, object storage, or an email service.
 
 ## Maker first comment
@@ -29,7 +29,7 @@ attachments, and link-based teammate invitations. The default deployment is
 one application container with SQLite and local uploads stored together in a
 persistent `/data` volume.
 
-Pagecairn is MIT licensed and self-hosted. Version 0.1.0 is distributed as
+Pagecairn is MIT licensed and self-hosted. Version 0.1.1 is distributed as
 source, so the current Docker quick start builds the application locally. The
 scope is intentionally small: one workspace per installation, local accounts,
 manual sharing of invitation links, and no real-time multiplayer editing.
@@ -78,7 +78,7 @@ than waiting through builds or typing every line.
 | 0:43–0:54 | Open search, enter **rollback**, and select the matching runbook result. | “Search looks across page titles and content, making a runbook quick to recover when it matters.” |
 | 0:54–1:06 | Open History, select an earlier revision, show its preview, and point to Restore without confirming it. | “Every saved revision stays available. You can inspect an earlier version and restore it without discarding the revisions that followed.” |
 | 1:06–1:20 | Open Members; enter a synthetic teammate email, choose Member, create a link, then obscure the token. | “Admins invite teammates with a seven-day link and choose a simple Admin or Member role. No email delivery service is required.” |
-| 1:20–1:28 | Return to the finished runbook and nested tree; end on the product name and self-host call to action. | “Pagecairn runs as one application container with SQLite and local uploads in persistent storage. Build version 0.1.0 from source and keep your documentation under your control.” |
+| 1:20–1:28 | Return to the finished runbook and nested tree; end on the product name and self-host call to action. | “Pagecairn runs as one application container with SQLite and local uploads in persistent storage. Build version 0.1.1 from source and keep your documentation under your control.” |
 
 ### Recording notes
 

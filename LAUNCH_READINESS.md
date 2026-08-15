@@ -12,7 +12,7 @@ Make Pagecairn a credible public MIT-licensed MVP that small software teams can 
 
 ## 1. Product Naming & Positioning
 
-**Status:** `IN_PROGRESS`
+**Status:** `DONE`
 
 - [x] Confirm **Pagecairn** as the final public name. Preliminary GitHub, npm, web, and domain checks found no obvious exact-name software/wiki conflict; formal trademark clearance remains outside this launch workflow.
 - [x] Finalize one consistent positioning set for all public surfaces:
@@ -20,7 +20,7 @@ Make Pagecairn a credible public MIT-licensed MVP that small software teams can 
   - GitHub description: “A lightweight self-hosted wiki for small software teams, built with Node.js, SQLite, and local file storage.”
   - Product Hunt tagline: “A lightweight, self-hosted wiki for small software teams”
   - Hero headline: “Open it. Write documentation. Find it later.”
-- [ ] Use this final name and positioning consistently across the app, landing page, README, GitHub metadata, and Product Hunt assets. Local surfaces are updated; the external repository slug and metadata remain pending.
+- [x] Use this final name and positioning consistently across the app, landing page, README, GitHub metadata, and Product Hunt assets. The repository slug, description, homepage, release metadata, and local surfaces use Pagecairn.
 
 ## 2. Security & Trust Blocker
 
@@ -93,9 +93,9 @@ as SVG and reused by the application and public site.
 - [x] Re-audit tracked files and history for secrets, private data, local artifacts, broken links, and stale temporary material; no credentials, keys, runtime data, or private user content were found.
 - [x] Retain the agent configuration and completed implementation references as contributor context, while removing them from the final README's primary product path.
 - [x] Add a concise `SECURITY.md` with a private vulnerability-reporting path and lightweight contribution guidance appropriate for an initial release.
-- [ ] Configure the final repository description, homepage, topics, and naming consistency; publish only after all launch gates pass. The Pagecairn repository slug and metadata remain pending.
-- [x] Create and publish the `v0.1.0` release with installation notes, backup/update warning, and concise known limitations.
-- [x] Verify license detection, repository links, clone/quick-start commands, Pages deployment, and the public repository structure after changing visibility.
+- [x] Configure the final repository description, homepage, topics, and naming consistency. The repository remains private until public launch is explicitly approved.
+- [x] Correct the historical `v0.1.0` release metadata and prepare `v0.1.1` as the first release built entirely from Pagecairn-named source.
+- [ ] Verify license detection, repository links, clone/quick-start commands, Pages deployment, and the public repository structure after changing visibility. GitHub Pages is not enabled while the repository is private.
 
 ## 9. README — FINAL STEP
 
@@ -150,6 +150,6 @@ Start only after the name, identity, landing page, screenshots, positioning, and
 - [x] Landing page implemented and validated
 - [x] Launch screenshots/assets ready
 - [x] Self-hosting/public documentation verified
-- [ ] GitHub public readiness complete after the external repository rename and metadata update
+- [ ] GitHub public readiness complete after repository visibility changes and GitHub Pages is enabled; Pagecairn naming and metadata are complete
 - [x] Final README complete
 - [x] Independent Product Readiness Review = **READY TO LAUNCH**

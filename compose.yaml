@@ -1,3 +1,5 @@
+name: pagecairn
+
 services:
   app:
     build: .
@@ -7,8 +9,8 @@ services:
       APP_DATA_DIR: /data
       NODE_ENV: production
     volumes:
-      - conf-simple-data:/data
+      - pagecairn-data:/data
     restart: unless-stopped
 
 volumes:
-  conf-simple-data:
+  pagecairn-data:
