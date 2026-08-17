@@ -91,6 +91,14 @@ npm run build
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report
 suspected vulnerabilities privately according to [SECURITY.md](SECURITY.md).
 
+## AI-assisted development
+
+Pagecairn was built with OpenAI Codex using role-based agents for exploration,
+implementation, independent QA, and release management. The
+[product instructions](AGENTS.md), [agent definitions](.codex/agents/), and
+[reusable workflows](.agents/skills/) are included for anyone interested in
+studying or adapting the process.
+
 ## License
 
 Pagecairn is available under the [MIT License](LICENSE).
